@@ -1,0 +1,7 @@
+version: '3.4'
+services:
+  clickhouse:
+    image: yandex/clickhouse-server
+    ports:
+      - 9000:9000
+    restart: unless-stopped
