@@ -3,8 +3,8 @@ package io.achord;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.DefaultEventLoop;
 import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
 
 import java.util.concurrent.Flow;
@@ -25,8 +25,7 @@ public final class ClickHouseClient implements AutoCloseable {
     static final String PACKET_ENCODER = "encoder";
 
     private final Bootstrap b;
-    private final DefaultEventLoop messageHandlerGroup;
-    private final DefaultEventLoopGroup workersGroup;
+    private final EventLoopGroup workersGroup;
     private String database;
     private String username = database = "default";
     private String password = "";
@@ -34,7 +33,6 @@ public final class ClickHouseClient implements AutoCloseable {
     private Limits limits = new Limits();
 
     public ClickHouseClient() {
-        messageHandlerGroup = new DefaultEventLoop();
         // todo make № of threads customizable, like whole group
         workersGroup = new DefaultEventLoopGroup(2);
         b = new Bootstrap()
@@ -109,11 +107,9 @@ public final class ClickHouseClient implements AutoCloseable {
     @Override
     public void close() {
         Future<?> configShutdown = b.config().group().shutdownGracefully();
-        Future<?> messageHandlerShutdown = messageHandlerGroup.shutdownGracefully();
         Future<?> decompressingShutdown = workersGroup.shutdownGracefully();
 
         configShutdown.syncUninterruptibly();
         decompressingShutdown.syncUninterruptibly();
-        messageHandlerShutdown.syncUninterruptibly();
     }
 }

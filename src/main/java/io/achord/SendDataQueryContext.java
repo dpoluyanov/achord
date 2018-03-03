@@ -1,6 +1,7 @@
 package io.achord;
 
 import io.netty.channel.Channel;
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 
 import java.util.concurrent.Flow;
@@ -76,17 +77,20 @@ final class SendDataQueryContext implements QueryContext {
     public void onDataBlockReceived(DataBlock block) {
         int state;
         if ((state = STATE.compareAndExchange(STATE_SERVER_INFO_RECEIVED, STATE_SAMPLE_BLOCK_RECEIVED)) == STATE_SERVER_INFO_RECEIVED) {
+            // eventLoop for executing all onNext/onSubscribe operations
+            EventLoop eventLoop = workersGroup.next();
             ObjectsToBlockProcessor processor = new ObjectsToBlockProcessor(block, channel.alloc());
-            DataBlockSender blockSender = new DataBlockSender(workersGroup);
-
-            source.subscribe(processor);
-            processor.subscribe(blockSender);
+            DataBlockSender blockSender = new DataBlockSender(eventLoop);
 
             if (channel.pipeline().get(BLOCK_COMPRESSOR) != null) {
                 channel.pipeline().addBefore(BLOCK_COMPRESSOR, "reactiveBlockSender", blockSender);
             } else {
                 channel.pipeline().addFirst(blockSender);
             }
+            eventLoop.execute(() -> {
+                source.subscribe(processor);
+                processor.subscribe(blockSender);
+            });
         } else {
             throw new IllegalStateException("Context expected to be in STATE_SERVER_INFO_RECEIVED but got " + state);
         }

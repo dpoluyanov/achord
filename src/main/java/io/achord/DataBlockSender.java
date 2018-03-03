@@ -2,7 +2,8 @@ package io.achord;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.EventLoop;
+import io.netty.util.ReferenceCountUtil;
 import org.jctools.queues.SpscArrayQueue;
 
 import java.util.concurrent.Flow;
@@ -24,13 +25,13 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
             AtomicIntegerFieldUpdater.newUpdater(DataBlockSender.class, "state");
     private final AtomicInteger REQUESTED = new AtomicInteger();
     private final SpscArrayQueue<DataBlock> queue = new SpscArrayQueue<>(PREFETCH);
-    private final EventLoopGroup eventLoop;
+    private final EventLoop eventLoop;
     private volatile Flow.Subscription subscription;
     private volatile ChannelHandlerContext ctx;
     private volatile int state = UNSUBSCRIBED;
 
-    DataBlockSender(EventLoopGroup eventLoopGroup) {
-        this.eventLoop = eventLoopGroup;
+    DataBlockSender(EventLoop eventLoop) {
+        this.eventLoop = eventLoop;
     }
 
 
@@ -50,7 +51,13 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
             int r = REQUESTED.decrementAndGet();
             assert r >= 0;
 
-            ctx.write(b);
+            ctx.write(b).addListener(future -> {
+                if (future.isSuccess()) {
+                    requestNext();
+                } else {
+                    onError(future.cause());
+                }
+            });
             written++;
         }
 
@@ -59,10 +66,26 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
         }
     }
 
+    private void requestNext() {
+        if (state == SUBSCRIBED && REQUESTED.getAndIncrement() <= PREFETCH) {
+            if (eventLoop.inEventLoop()) {
+                subscription.request(1);
+            } else {
+                eventLoop.execute(() -> subscription.request(1));
+            }
+        } else {
+            throw new IllegalStateException("Requested count is overgrowth");
+        }
+    }
+
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        if (subscription != null) {
-            subscription.cancel();
+        try {
+            if (subscription != null) {
+                subscription.cancel();
+            }
+        } finally {
+            queue.drain(ReferenceCountUtil::release);
         }
     }
 
@@ -79,7 +102,11 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
         this.subscription = subscription;
         if (STATE.compareAndSet(this, UNSUBSCRIBED, SUBSCRIBED)) {
             REQUESTED.set(PREFETCH);
-            subscription.request(PREFETCH);
+            if (eventLoop.inEventLoop()) {
+                subscription.request(PREFETCH);
+            } else {
+                eventLoop.execute(() -> subscription.request(PREFETCH));
+            }
         } else {
             throw new IllegalStateException("Unexpected state on onSubscribe()");
         }
@@ -89,11 +116,20 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
     public void onNext(DataBlock item) {
         if (state == SUBSCRIBED) {
             if (ctx != null && ctx.channel().isWritable()) {
-                ctx.writeAndFlush(item);
-                subscription.request(1);
+                ctx.writeAndFlush(item).addListener(future -> {
+                    if (future.isSuccess()) {
+                        requestNext();
+                    } else {
+                        onError(future.cause());
+                    }
+                });
             } else {
                 // put to queue from single thread
-                eventLoop.execute(() -> queue.offer(item));
+                if (eventLoop.inEventLoop()) {
+                    queue.offer(item);
+                } else {
+                    eventLoop.execute(() -> queue.offer(item));
+                }
             }
         } else {
             throw new IllegalStateException("Unexpected state on onNext()");

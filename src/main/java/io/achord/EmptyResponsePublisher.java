@@ -2,7 +2,7 @@ package io.achord;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -30,9 +30,9 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
     private final Settings settings;
     private final Limits limits;
     private final Flow.Publisher<Object[]> source;
-    private final DefaultEventLoopGroup workersGroup;
+    private final EventLoopGroup workersGroup;
 
-    EmptyResponsePublisher(Bootstrap bootstrap, DefaultEventLoopGroup workersGroup,
+    EmptyResponsePublisher(Bootstrap bootstrap, EventLoopGroup workersGroup,
                            AuthData authData, String query, String queryId, Settings settings, Limits limits,
                            Flow.Publisher<Object[]> source) {
         this.bootstrap = bootstrap;
