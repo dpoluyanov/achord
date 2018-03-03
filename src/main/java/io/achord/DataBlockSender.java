@@ -72,7 +72,12 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
                 if (eventLoop.inEventLoop()) {
                     subscription.request(1);
                 } else {
-                    eventLoop.execute(() -> subscription.request(1));
+                    eventLoop.execute(() -> {
+                        // recheck after execution
+                        if (state == SUBSCRIBED) {
+                            subscription.request(1);
+                        }
+                    });
                 }
             else {
                 throw new IllegalStateException("Requested count is overgrowth");
