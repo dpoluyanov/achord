@@ -10,6 +10,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import static io.achord.QueryContext.QUERY_CONTEXT_ATTR;
+
 /**
  * @author Camelion
  * @since 01/03/2018
@@ -48,11 +50,9 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
         DataBlock b;
         int written = 0;
         while (ctx.channel().isWritable() && (b = queue.poll()) != null) {
-            int r = REQUESTED.decrementAndGet();
-            assert r >= 0;
-
-            ctx.write(b).addListener(future -> {
+            ctx.channel().write(b).addListener(future -> {
                 if (future.isSuccess()) {
+                    REQUESTED.decrementAndGet();
                     requestNext();
                 } else {
                     onError(future.cause());
@@ -62,31 +62,27 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
         }
 
         if (written > 0) {
-            ctx.flush();
+            ctx.channel().flush();
         }
     }
 
     private void requestNext() {
-        if (state == SUBSCRIBED && REQUESTED.getAndIncrement() <= PREFETCH) {
-            if (eventLoop.inEventLoop()) {
-                subscription.request(1);
-            } else {
-                eventLoop.execute(() -> subscription.request(1));
+        if (state == SUBSCRIBED) {
+            if (REQUESTED.getAndIncrement() <= PREFETCH)
+                if (eventLoop.inEventLoop()) {
+                    subscription.request(1);
+                } else {
+                    eventLoop.execute(() -> subscription.request(1));
+                }
+            else {
+                throw new IllegalStateException("Requested count is overgrowth");
             }
-        } else {
-            throw new IllegalStateException("Requested count is overgrowth");
         }
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-        try {
-            if (subscription != null) {
-                subscription.cancel();
-            }
-        } finally {
-            queue.drain(ReferenceCountUtil::release);
-        }
+        queue.drain(ReferenceCountUtil::release);
     }
 
     @Override
@@ -116,8 +112,9 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
     public void onNext(DataBlock item) {
         if (state == SUBSCRIBED) {
             if (ctx != null && ctx.channel().isWritable()) {
-                ctx.writeAndFlush(item).addListener(future -> {
+                ctx.channel().writeAndFlush(item).addListener(future -> {
                     if (future.isSuccess()) {
+                        REQUESTED.decrementAndGet();
                         requestNext();
                     } else {
                         onError(future.cause());
@@ -132,14 +129,17 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
                 }
             }
         } else {
+            // consume
+            ReferenceCountUtil.release(item);
             throw new IllegalStateException("Unexpected state on onNext()");
         }
     }
 
     @Override
     public void onError(Throwable throwable) {
+        subscription.cancel();
         STATE.set(this, ERROR);
-        ctx.channel().close().syncUninterruptibly();
+        ctx.fireExceptionCaught(throwable);
     }
 
     @Override
@@ -148,7 +148,10 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
             ctx.channel().eventLoop().execute(() -> {
                 // push all blocks into channel and close it
                 drain();
-                ctx.channel().close();
+
+                QueryContext queryContext = ctx.channel().attr(QUERY_CONTEXT_ATTR).get();
+
+                ((SendDataQueryContext) queryContext).completed();
             });
         } else {
             throw new IllegalStateException("Unexpected state on onComplete()");

@@ -4,8 +4,9 @@ import io.netty.buffer.ByteBuf;
 
 import java.time.temporal.Temporal;
 
-import static io.achord.ClickHouseMessageDecoder.readVarUInt;
+import static io.achord.ClickHousePacketDecoder.readVarUInt;
 import static io.achord.ClientMessage.writeStringBinary;
+import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 
 /**
@@ -21,7 +22,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows);
+            buf.readBytes(column.data, rows);
         }
     },
     UInt8 {
@@ -32,7 +33,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows);
+            buf.readBytes(column.data, rows);
         }
     },
     Int32 {
@@ -43,7 +44,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows * 4);
+            buf.readBytes(column.data, rows * 4);
         }
     },
     UInt32 {
@@ -54,7 +55,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows * 4);
+            buf.readBytes(column.data, rows * 4);
         }
     },
     Int64 {
@@ -65,7 +66,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows * 8);
+            buf.readBytes(column.data, rows * 8);
         }
     },
     UInt64 {
@@ -76,7 +77,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows * 8);
+            buf.readBytes(column.data, rows * 8);
         }
     },
     String {
@@ -99,7 +100,19 @@ enum ColumnType {
             int to = buf.readerIndex();
             buf.resetReaderIndex();
 
-            column.data = buf.readBytes(to - from);
+            buf.readBytes(column.data, to - from);
+        }
+    },
+    Date {
+        @Override
+        void write(ByteBuf buf, Object val) {
+            Temporal dateTime = (Temporal) val;
+            buf.writeShort(dateTime.get(EPOCH_DAY));
+        }
+
+        @Override
+        void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
+            buf.readBytes(column.data, rows * 2);
         }
     },
     DateTime {
@@ -111,7 +124,7 @@ enum ColumnType {
 
         @Override
         void read(ByteBuf buf, ColumnWithTypeAndName column, int rows) {
-            column.data = buf.readBytes(rows * 4);
+            buf.readBytes(column.data, rows * 4);
         }
     };
 

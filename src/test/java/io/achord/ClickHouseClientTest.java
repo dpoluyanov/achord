@@ -26,7 +26,7 @@ final class ClickHouseClientTest {
     void sendSmallIntMultipleTimes() {
         Object[] data = new Object[]{1};
 
-        Flow.Publisher<Void> result = client.sendData("INSERT INTO test.connection_test VALUES (value)",
+        Flow.Publisher<Void> result = client.sendData("INSERT INTO test.connection_test(value)",
                 publisherToFlowPublisher(
                         range(0, Integer.MAX_VALUE).map(i -> data)));
 

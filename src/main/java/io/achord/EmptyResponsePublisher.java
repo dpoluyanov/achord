@@ -33,7 +33,7 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
     private final EventLoopGroup workersGroup;
 
     EmptyResponsePublisher(Bootstrap bootstrap, EventLoopGroup workersGroup,
-                           AuthData authData, String query, String queryId, Settings settings, Limits limits,
+                           AuthData authData, String queryId, String query, Settings settings, Limits limits,
                            Flow.Publisher<Object[]> source) {
         this.bootstrap = bootstrap;
         this.workersGroup = workersGroup;
@@ -66,7 +66,7 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
             if (!WIP.get() && n > 0 && WIP.compareAndSet(false, true)) {
                 cf = bootstrap.connect();
                 cf.channel().attr(QUERY_CONTEXT_ATTR)
-                        .set(new SendDataQueryContext(authData, query, queryId, settings, limits, cf.channel(), source, s,
+                        .set(new SendDataQueryContext(authData, queryId, query, settings, limits, cf.channel(), source, s,
                                 workersGroup));
 
                 if (settings.isCompressionEnabled()) {

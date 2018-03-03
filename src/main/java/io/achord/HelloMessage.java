@@ -25,7 +25,7 @@ final class HelloMessage extends ClientMessage {
             writeVarUInt(buf, 1); // minor
             writeVarUInt(buf, COMPATIBLE_CLIENT_REVISION); // build number
 
-            STATIC = buf.copy(0, buf.writableBytes());
+            STATIC = buf.copy(0, buf.writerIndex());
         } finally {
             ReferenceCountUtil.release(buf);
         }
@@ -45,6 +45,6 @@ final class HelloMessage extends ClientMessage {
         writeStringBinary(buf, authData.password);
 
         return alloc.compositeDirectBuffer(2)
-                .addComponents(STATIC.retain(), buf);
+                .addComponents(true, STATIC.slice().retain(), buf);
     }
 }

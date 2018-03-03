@@ -30,8 +30,8 @@ final class SendDataQueryContext implements QueryContext {
     private final AtomicInteger STATE = new AtomicInteger(STATE_DISCONNECTED);
     private ClickHouseServerInfo serverInfo;
 
-    SendDataQueryContext(AuthData authData, String query,
-                         String queryId, Settings settings, Limits limits,
+    SendDataQueryContext(AuthData authData, String queryId,
+                         String query, Settings settings, Limits limits,
                          Channel channel,
                          Flow.Publisher<Object[]> source, Flow.Subscriber<? super Void> s, EventLoopGroup workersGroup) {
         this.authData = authData;
@@ -103,11 +103,15 @@ final class SendDataQueryContext implements QueryContext {
 
     @Override
     public void onEndOfStream() {
-        s.onComplete();
+        throw new IllegalStateException("End of stream should not be passed to SendDataQueryContext");
     }
 
     @Override
     public void onChannelExceptionCaught(Throwable cause) {
         s.onError(cause);
+    }
+
+    void completed() {
+        s.onComplete();
     }
 }

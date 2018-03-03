@@ -5,6 +5,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 
 import java.util.concurrent.Flow;
@@ -36,8 +38,11 @@ public final class ClickHouseClient implements AutoCloseable {
         // todo make № of threads customizable, like whole group
         workersGroup = new DefaultEventLoopGroup(2);
         b = new Bootstrap()
-                // todo create I/O group selection (may be through property but prefer native)
-                //.group(eventLoopGroup)
+                // todo create I/O group and channel selection (may be through property but prefer native)
+                .group(new NioEventLoopGroup())
+                .channel(NioSocketChannel.class)
+                // defaults
+                .remoteAddress("localhost", 9000)
                 // todo make configurable, because on macosx it shouldn't clash with Nagle Algorithm
                 .option(TCP_NODELAY, true)
                 .handler(new ChannelInitializer() {
@@ -99,9 +104,10 @@ public final class ClickHouseClient implements AutoCloseable {
      * @param source reactive data publisher
      * @return empty {@code <Vo  id>} publisher that signals success or error after insert process ends
      */
-    public Flow.Publisher<Void> sendData(String query, String queryId, Flow.Publisher<Object[]> source) {
+    public Flow.Publisher<Void> sendData(String queryId, String query, Flow.Publisher<Object[]> source) {
+        query += " FORMAT Native";
         AuthData authData = new AuthData(database, username, password);
-        return new EmptyResponsePublisher(b.clone(), workersGroup, authData, query, queryId, settings, limits, source);
+        return new EmptyResponsePublisher(b.clone(), workersGroup, authData, queryId, query, settings, limits, source);
     }
 
     @Override

@@ -43,7 +43,7 @@ final class SendQueryMessage extends ClientMessage {
         try {
             buf = Unpooled.directBuffer();
             writeVarUInt(buf, SEND_QUERY_MSG_ID);
-            STATIC_MSG_ID_BUF = buf.copy(0, buf.writableBytes());
+            STATIC_MSG_ID_BUF = buf.copy(0, buf.writerIndex());
         } finally {
             ReferenceCountUtil.release(buf);
         }
@@ -64,7 +64,7 @@ final class SendQueryMessage extends ClientMessage {
             writeVarUInt(buf, 1L);
             writeVarUInt(buf, 1L);
             writeVarUInt(buf, COMPATIBLE_CLIENT_REVISION);
-            STATIC_CLIENT_INFO_BUF = buf.copy(0, buf.writableBytes());
+            STATIC_CLIENT_INFO_BUF = buf.copy(0, buf.writerIndex());
         } finally {
             ReferenceCountUtil.release(buf);
         }
@@ -105,10 +105,10 @@ final class SendQueryMessage extends ClientMessage {
 
         if (serverRevision > DBMS_MIN_REVISION_WITH_CLIENT_INFO) {
             return alloc.compositeDirectBuffer(4)
-                    .addComponents(STATIC_MSG_ID_BUF.retain(), queryIdBuf, STATIC_CLIENT_INFO_BUF.retain(), queryBuf);
+                    .addComponents(true, STATIC_MSG_ID_BUF.slice().retain(), queryIdBuf, STATIC_CLIENT_INFO_BUF.slice().retain(), queryBuf);
         } else {
             return alloc.compositeDirectBuffer(3)
-                    .addComponents(STATIC_MSG_ID_BUF.retain(), queryIdBuf, queryBuf);
+                    .addComponents(true, STATIC_MSG_ID_BUF.slice().retain(), queryIdBuf, queryBuf);
         }
     }
 }

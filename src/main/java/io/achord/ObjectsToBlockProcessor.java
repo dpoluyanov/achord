@@ -39,38 +39,41 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
     public void subscribe(Flow.Subscriber<? super DataBlock> subscriber) {
         this.subscriber = subscriber;
         recreateColumns();
-        subscriber.onSubscribe(new Flow.Subscription() {
-            @Override
-            public void request(long n) {
-                try {
+        if (STATE.compareAndSet(this, SUBSCRIBED, WIP)) {
+            subscriber.onSubscribe(new Flow.Subscription() {
+                @Override
+                public void request(long n) {
                     if (state == WIP) {
                         // suppose that in future some number of buffers should be on-the-fly for immediately sending after request
-                        requested.addAndGet(n);
+                        requested.addAndGet(n * BLOCK_SIZE);
 
                         // request data for n-next blocks
                         subscription.request(n * BLOCK_SIZE);
                     } else {
-                        throw new IllegalStateException("request(n) come to unexpected size");
-                    }
-                } catch (Throwable e) {
-                    freeBuffers();
-                    throw e;
-                }
-            }
-
-            @Override
-            public void cancel() {
-                if (subscription != null) {
-                    try {
-                        subscription.cancel();
-
-                        STATE.set(ObjectsToBlockProcessor.this, CANCELLED);
-                    } finally {
-                        freeBuffers();
+                        onError(new IllegalStateException("request(n) come to unexpected size"));
                     }
                 }
-            }
-        });
+
+                @Override
+                public void cancel() {
+                    // todo: later need rewrite without synchronizations
+                    synchronized (ObjectsToBlockProcessor.this) {
+                        if (subscription != null) {
+                            try {
+                                subscription.cancel();
+
+                                STATE.set(ObjectsToBlockProcessor.this, CANCELLED);
+                            } finally {
+                                freeBuffers();
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            freeBuffers();
+            throw new IllegalStateException("onSubscribe come to unexpected state");
+        }
     }
 
     private void recreateColumns() {
@@ -81,6 +84,22 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
             columns[i] = new ColumnWithTypeAndName(sample.columns[i].type, sample.columns[i].name, alloc.directBuffer());
         }
         rows = 0;
+    }
+
+    private synchronized void freeBuffers() {
+        if (sample != null) {
+            ReferenceCountUtil.release(sample);
+            sample = null;
+        }
+        if (columns != null) {
+            for (int i = 0; i < columns.length; i++) {
+                if (columns[i].data.refCnt() > 0)
+                    // release once
+                    ReferenceCountUtil.release(columns[i].data);
+            }
+
+            columns = null;
+        }
     }
 
     @Override
@@ -100,38 +119,35 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
     // we can do better without synchronization and with avoiding all contention problems but something later
     @Override
     public synchronized void onNext(Object[] item) {
-        try {
-            if (state == WIP) {
-                long left;
-                if ((left = requested.decrementAndGet()) >= 0) {
-                    for (int i = 0; i < columns.length; i++) {
-                        ColumnWithTypeAndName c = columns[i];
-                        c.type.write(c.data, item[i]);
-                    }
-                    rows++;
+        if (state == WIP) {
+            long left;
+            if ((left = requested.decrementAndGet()) >= 0) {
+                for (int i = 0; i < columns.length; i++) {
+                    ColumnWithTypeAndName c = columns[i];
+                    c.type.write(c.data, item[i]);
+                }
+                rows++;
 
-                    if (rows >= BLOCK_SIZE) {
-                        DataBlock block = new DataBlock(sample.info, columns, rows);
+                if (rows >= BLOCK_SIZE) {
+                    DataBlock block = new DataBlock(sample.info, columns, rows);
 
-                        try {
-                            subscriber.onNext(block);
-                        } catch (Throwable e) {
-                            // block does not reach any channel handler
-                            ReferenceCountUtil.release(block);
-                            throw e;
-                        }
-                        recreateColumns();
-                        subscription.request(BLOCK_SIZE);
+                    try {
+                        subscriber.onNext(block);
+                    } catch (Throwable e) {
+                        // block does not reach any channel handler
+                        ReferenceCountUtil.release(block);
+                        throw e;
                     }
-                } else {
-                    throw new IllegalStateException("onNext produces unexpected count of elements");
+                    recreateColumns();
+                    requested.addAndGet(BLOCK_SIZE);
+                    subscription.request(BLOCK_SIZE);
                 }
             } else {
-                throw new IllegalStateException("onNext passed to illegal state");
+                throw new IllegalStateException("onNext produces unexpected count of elements");
             }
-        } catch (Throwable e) {
-            freeBuffers();
-            throw e;
+        } else {
+            // possible should be treated as ignore
+            throw new IllegalStateException("onNext passed to illegal state");
         }
     }
 
@@ -142,20 +158,6 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
             subscriber.onError(throwable);
         } finally {
             freeBuffers();
-        }
-    }
-
-    private synchronized void freeBuffers() {
-        if (sample != null) {
-            ReferenceCountUtil.release(sample);
-            sample = null;
-        }
-        if (columns != null) {
-            for (int i = 0; i < columns.length; i++) {
-                ReferenceCountUtil.release(columns[i].data);
-            }
-
-            columns = null;
         }
     }
 

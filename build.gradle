@@ -67,6 +67,13 @@ dependencies {
 
 dependencies {
     testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.1.5.RELEASE'
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.1.0")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.1.0")
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
+
+}
+
+test {
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter', 'junit-vintage'
+    }
 }
