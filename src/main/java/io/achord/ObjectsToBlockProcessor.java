@@ -7,6 +7,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static io.achord.DataBlock.EMPTY;
+
 /**
  * @author Camelion
  * @since 19/02/2018
@@ -117,37 +119,49 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
     }
 
     // we can do better without synchronization and with avoiding all contention problems but something later
+    // with another algorithm that could be applied as below:
+    //      1) write into current block under cas
+    //      2) if cas write is failed create new block and write into (but keep the same counter)
+    //      3) after rows counter exceeded threshold (1024 * 1024) switch this couple of blocks into merge state
+    //         note: neither new writes can be done to this blocks.
+    //      4) when last thread writes into blocks in merge state (probably should be controlled by another counter)
+    //         the thread pushes this blocks into subscriber onNext chain
     @Override
     public synchronized void onNext(Object[] item) {
-        if (state == WIP) {
-            long left;
-            if ((left = requested.decrementAndGet()) >= 0) {
-                for (int i = 0; i < columns.length; i++) {
-                    ColumnWithTypeAndName c = columns[i];
-                    c.type.write(c.data, item[i]);
-                }
-                rows++;
-
-                if (rows >= BLOCK_SIZE) {
-                    DataBlock block = new DataBlock(sample.info, columns, rows);
-
-                    try {
-                        subscriber.onNext(block);
-                    } catch (Throwable e) {
-                        // block does not reach any channel handler
-                        ReferenceCountUtil.release(block);
-                        throw e;
+        try {
+            if (state == WIP) {
+                long left;
+                if ((left = requested.decrementAndGet()) >= 0) {
+                    for (int i = 0; i < columns.length; i++) {
+                        ColumnWithTypeAndName c = columns[i];
+                        c.type.write(c.data, item[i]);
                     }
-                    recreateColumns();
-                    requested.addAndGet(BLOCK_SIZE);
-                    subscription.request(BLOCK_SIZE);
+                    rows++;
+
+                    if (rows >= BLOCK_SIZE) {
+                        DataBlock block = new DataBlock(sample.info, columns, rows);
+
+                        try {
+                            subscriber.onNext(block);
+                        } catch (Throwable e) {
+                            // block can does not reach any channel handler
+                            if (block.refCnt() > 0)
+                                ReferenceCountUtil.release(block);
+                            throw e;
+                        }
+                        recreateColumns();
+                        requested.addAndGet(BLOCK_SIZE);
+                        subscription.request(BLOCK_SIZE);
+                    }
+                } else {
+                    throw new IllegalStateException("onNext produces unexpected count of elements");
                 }
             } else {
-                throw new IllegalStateException("onNext produces unexpected count of elements");
+                // possible should be treated as ignore
+                throw new IllegalStateException("onNext passed to illegal state");
             }
-        } else {
-            // possible should be treated as ignore
-            throw new IllegalStateException("onNext passed to illegal state");
+        } catch (Throwable e) {
+            onError(e);
         }
     }
 
@@ -155,6 +169,7 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
     public void onError(Throwable throwable) {
         try {
             STATE.set(this, ERROR);
+            subscription.cancel();
             subscriber.onError(throwable);
         } finally {
             freeBuffers();
@@ -173,9 +188,7 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
 
     private void flushLast() {
         if (rows > 0) {
-            DataBlock block = new DataBlock(sample.info, columns, rows);
-
-            subscriber.onNext(block);
+            subscriber.onNext((DataBlock) EMPTY.retain());
         }
         subscriber.onComplete();
     }

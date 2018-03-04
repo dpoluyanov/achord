@@ -21,6 +21,7 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
     private static final int UNSUBSCRIBED = -1;
     private static final int SUBSCRIBED = 0;
     private static final int COMPLETE = 1;
+    private static final int TERMINATED = 2;
     // TODO: prefetch should be configurable and (may be) automatically calculable by some evristics
     private static final int PREFETCH = 2 << 3;
     private static final AtomicIntegerFieldUpdater<DataBlockSender> STATE =
@@ -35,7 +36,6 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
     DataBlockSender(EventLoop eventLoop) {
         this.eventLoop = eventLoop;
     }
-
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) {
@@ -87,6 +87,7 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
+        STATE.set(this, TERMINATED);
         queue.drain(ReferenceCountUtil::release);
     }
 

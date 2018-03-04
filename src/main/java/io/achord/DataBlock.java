@@ -8,6 +8,7 @@ import io.netty.util.ReferenceCounted;
  * @since 18/02/2018
  */
 final class DataBlock extends AbstractReferenceCounted {
+    // before usage should be retained
     static final DataBlock EMPTY = new DataBlock(new BlockInfo(), new ColumnWithTypeAndName[0], 0);
     final BlockInfo info;
     final ColumnWithTypeAndName[] columns;

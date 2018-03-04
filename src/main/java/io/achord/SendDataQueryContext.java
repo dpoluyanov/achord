@@ -7,6 +7,7 @@ import io.netty.channel.EventLoopGroup;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.achord.DataBlock.EMPTY;
 import static io.achord.EmptyResponsePublisher.BLOCK_COMPRESSOR;
 
 /**
@@ -67,7 +68,7 @@ final class SendDataQueryContext implements QueryContext {
             this.serverInfo = serverInfo;
 
             channel.write(new SendQueryMessage(queryId, query, settings, limits, serverInfo.serverRevision));
-            channel.writeAndFlush(DataBlock.EMPTY);
+            channel.writeAndFlush(EMPTY.retain());
         } else {
             throw new IllegalStateException("Context expected to be in STATE_CONNECTED but got " + state);
         }
