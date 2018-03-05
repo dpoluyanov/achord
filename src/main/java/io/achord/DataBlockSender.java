@@ -93,10 +93,10 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
 
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-        super.channelWritabilityChanged(ctx);
         if (ctx.channel().isWritable()) {
             drain();
         }
+        super.channelWritabilityChanged(ctx);
     }
 
     @Override
@@ -129,9 +129,11 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
             } else {
                 // put to queue from single thread
                 if (eventLoop.inEventLoop()) {
-                    queue.offer(item);
+                    if (!queue.offer(item)) {
+                        eventuallyOffer(item);
+                    }
                 } else {
-                    eventLoop.execute(() -> queue.offer(item));
+                    eventuallyOffer(item);
                 }
             }
         } else {
@@ -162,5 +164,13 @@ final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow
         } else {
             throw new IllegalStateException("Unexpected state on onComplete()");
         }
+    }
+
+    private void eventuallyOffer(DataBlock item) {
+        eventLoop.execute(() -> {
+            if (!queue.offer(item)) {
+                eventuallyOffer(item);
+            }
+        });
     }
 }

@@ -1,6 +1,8 @@
 package io.achord;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.EventLoop;
 import io.netty.util.ReferenceCountUtil;
 
 import java.util.concurrent.Flow;
@@ -22,18 +24,28 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
     private static final int ERROR = 3;
     private static final int CANCELLED = 4;
     private static final AtomicIntegerFieldUpdater<ObjectsToBlockProcessor> STATE = AtomicIntegerFieldUpdater.newUpdater(ObjectsToBlockProcessor.class, "state");
+    // we can do better without synchronization and with avoiding all contention problems but something later
+    // with another algorithm that could be applied as below:
+    //      1) write into current block under cas
+    //      2) if cas write is failed create new block and write into (but keep the same counter)
+    //      3) after rows counter exceeded threshold (1024 * 1024) switch this couple of blocks into merge state
+    //         note: neither new writes can be done to this blocks.
+    //      4) when last thread writes into blocks in merge state (probably should be controlled by another counter)
+    //         the thread pushes this blocks into subscriber onNext chain
+    static int i = 0;
     private final AtomicLong requested = new AtomicLong(0);
     private final ByteBufAllocator alloc;
+    private final EventLoop eventLoop;
     volatile DataBlock sample;
     private volatile Flow.Subscription subscription;
     private volatile int state = UNSUBSCRIBED;
     private volatile Flow.Subscriber<? super DataBlock> subscriber;
-
     private volatile ColumnWithTypeAndName[] columns;
     private volatile int rows;
 
-    ObjectsToBlockProcessor(DataBlock sample, ByteBufAllocator alloc) {
+    ObjectsToBlockProcessor(DataBlock sample, EventLoop eventLoop, ByteBufAllocator alloc) {
         this.sample = sample;
+        this.eventLoop = eventLoop;
         this.alloc = alloc;
     }
 
@@ -78,13 +90,16 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
         }
     }
 
-    private void recreateColumns() {
-        columns = new ColumnWithTypeAndName[sample.columns.length];
+
+    private synchronized void recreateColumns() {
+        ColumnWithTypeAndName[] cs = new ColumnWithTypeAndName[sample.columns.length];
         for (int i = 0; i < sample.columns.length; i++) {
             // todo: data for buffers can be written independently (by some bunch of buffers)
             // and then collected into composite buffer (before forming resulting dataBlock)
-            columns[i] = new ColumnWithTypeAndName(sample.columns[i].type, sample.columns[i].name, alloc.directBuffer());
+            ByteBuf data = alloc.directBuffer();
+            cs[i] = new ColumnWithTypeAndName(sample.columns[i].type, sample.columns[i].name, data);
         }
+        columns = cs;
         rows = 0;
     }
 
@@ -95,7 +110,8 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
         }
         if (columns != null) {
             for (int i = 0; i < columns.length; i++) {
-                if (columns[i].data.refCnt() > 0)
+                // columns[i] can be null if error happens on creation stage
+                if (columns[i] != null && columns[i].data.refCnt() > 0)
                     // release once
                     ReferenceCountUtil.release(columns[i].data);
             }
@@ -118,14 +134,6 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
         }
     }
 
-    // we can do better without synchronization and with avoiding all contention problems but something later
-    // with another algorithm that could be applied as below:
-    //      1) write into current block under cas
-    //      2) if cas write is failed create new block and write into (but keep the same counter)
-    //      3) after rows counter exceeded threshold (1024 * 1024) switch this couple of blocks into merge state
-    //         note: neither new writes can be done to this blocks.
-    //      4) when last thread writes into blocks in merge state (probably should be controlled by another counter)
-    //         the thread pushes this blocks into subscriber onNext chain
     @Override
     public synchronized void onNext(Object[] item) {
         try {
@@ -150,8 +158,6 @@ final class ObjectsToBlockProcessor implements Flow.Processor<Object[], DataBloc
                             throw e;
                         }
                         recreateColumns();
-                        requested.addAndGet(BLOCK_SIZE);
-                        subscription.request(BLOCK_SIZE);
                     }
                 } else {
                     throw new IllegalStateException("onNext produces unexpected count of elements");

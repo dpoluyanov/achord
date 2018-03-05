@@ -19,6 +19,11 @@ final class DataBlockEncoder extends MessageToByteEncoder<DataBlock> {
 
     private DataBlockEncoder() { /* restricted */ }
 
+    @Override
+    protected void encode(ChannelHandlerContext ctx, DataBlock block, ByteBuf out) {
+        writeBlock(block, out);
+    }
+
     static void writeBlock(DataBlock block, ByteBuf out) {
         writeVarUInt(out, DATA_MSG_ID);
         writeStringBinary(out, ""); // Block name
@@ -38,10 +43,5 @@ final class DataBlockEncoder extends MessageToByteEncoder<DataBlock> {
                 out.writeBytes(c.data);
             }
         }
-    }
-
-    @Override
-    protected void encode(ChannelHandlerContext ctx, DataBlock block, ByteBuf out) {
-        writeBlock(block, out);
     }
 }

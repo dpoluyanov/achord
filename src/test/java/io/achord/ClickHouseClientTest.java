@@ -5,6 +5,10 @@ import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.util.concurrent.Flow;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import static reactor.adapter.JdkFlowAdapter.flowPublisherToFlux;
 import static reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher;
@@ -24,11 +28,19 @@ final class ClickHouseClientTest {
 
     @Test
     void sendSmallIntMultipleTimes() {
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        rootLogger.setLevel(Level.FINE);
+        for (Handler h : rootLogger.getHandlers()) {
+            h.setLevel(Level.FINE);
+        }
+
         Object[] data = new Object[]{1};
 
         Flow.Publisher<Void> result = client.sendData("INSERT INTO test.connection_test(value)",
                 publisherToFlowPublisher(
-                        range(0, Integer.MAX_VALUE).map(i -> data)));
+                        range(Integer.MIN_VALUE, Integer.MAX_VALUE)
+                                .map(i -> data)
+                ));
 
         StepVerifier
                 .create(flowPublisherToFlux(result))

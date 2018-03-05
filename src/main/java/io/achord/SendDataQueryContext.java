@@ -80,7 +80,7 @@ final class SendDataQueryContext implements QueryContext {
         if ((state = STATE.compareAndExchange(STATE_SERVER_INFO_RECEIVED, STATE_SAMPLE_BLOCK_RECEIVED)) == STATE_SERVER_INFO_RECEIVED) {
             // eventLoop for executing all onNext/onSubscribe operations
             EventLoop eventLoop = workersGroup.next();
-            ObjectsToBlockProcessor processor = new ObjectsToBlockProcessor(block, channel.alloc());
+            ObjectsToBlockProcessor processor = new ObjectsToBlockProcessor(block, eventLoop, channel.alloc());
             DataBlockSender blockSender = new DataBlockSender(eventLoop);
 
             if (channel.pipeline().get(BLOCK_COMPRESSOR) != null) {

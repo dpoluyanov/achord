@@ -1,6 +1,7 @@
 package io.achord;
 
 import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 
 /**
@@ -8,8 +9,8 @@ import io.netty.util.ReferenceCounted;
  * @since 18/02/2018
  */
 final class DataBlock extends AbstractReferenceCounted {
-    // before usage should be retained
     static final DataBlock EMPTY = new DataBlock(new BlockInfo(), new ColumnWithTypeAndName[0], 0);
+    // before usage should be retained
     final BlockInfo info;
     final ColumnWithTypeAndName[] columns;
     final int rows;
@@ -22,8 +23,9 @@ final class DataBlock extends AbstractReferenceCounted {
 
     @Override
     protected void deallocate() {
-        for (ColumnWithTypeAndName column : columns) {
-            column.data.release();
+        for (int i = 0; i < columns.length; i++) {
+            ReferenceCountUtil.release(columns[i].data);
+            columns[i] = null;
         }
     }
 
