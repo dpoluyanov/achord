@@ -67,6 +67,10 @@ dependencies {
 
 dependencies {
     testCompile group: 'io.projectreactor', name: 'reactor-test', version: '3.1.5.RELEASE'
+    testCompile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
+    testRuntimeOnly group: 'javax.activation', name: 'activation', version: '1.1.1'
+
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
 

@@ -1,14 +1,11 @@
 package io.achord;
 
+import io.achord.test.extensions.docker.DockerContainer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 
 import java.util.concurrent.Flow;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import static reactor.adapter.JdkFlowAdapter.flowPublisherToFlux;
 import static reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher;
@@ -18,6 +15,7 @@ import static reactor.core.publisher.Flux.range;
  * @author Camelion
  * @since 11/02/2018
  */
+@DockerContainer(image = "yandex/clickhouse-server", ports = "9000:9000")
 final class ClickHouseClientTest {
     static ClickHouseClient client;
 
@@ -27,18 +25,15 @@ final class ClickHouseClientTest {
     }
 
     @Test
+    @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
+            "--multiquery",
+            "--query=CREATE TABLE IF NOT EXISTS default.connection_test(date Date DEFAULT toDate(now()), value UInt32) ENGINE = MergeTree(date, (date), 8192)"})
     void sendSmallIntMultipleTimes() {
-        Logger rootLogger = LogManager.getLogManager().getLogger("");
-        rootLogger.setLevel(Level.FINE);
-        for (Handler h : rootLogger.getHandlers()) {
-            h.setLevel(Level.FINE);
-        }
-
         Object[] data = new Object[]{1};
 
-        Flow.Publisher<Void> result = client.sendData("INSERT INTO test.connection_test(value)",
+        Flow.Publisher<Void> result = client.sendData("INSERT INTO default.connection_test(value)",
                 publisherToFlowPublisher(
-                        range(Integer.MIN_VALUE, Integer.MAX_VALUE)
+                        range(0, 10 * 1024 * 1024)
                                 .map(i -> data)
                 ));
 
