@@ -21,7 +21,7 @@ import static io.achord.QueryContext.QUERY_CONTEXT_ATTR;
  * @author Camelion
  * @since 14/02/2018
  */
-final class EmptyResponsePublisher implements Flow.Publisher<Void> {
+final class EmptyResponsePublisher<T> implements Flow.Publisher<Void> {
     static final String BLOCK_COMPRESSOR = "blockCompressor";
     private final Bootstrap bootstrap;
     private final AuthData authData;
@@ -29,12 +29,12 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
     private final String queryId;
     private final Settings settings;
     private final Limits limits;
-    private final Flow.Publisher<Object[]> source;
+    private final Flow.Publisher<T[]> source;
     private final EventLoopGroup workersGroup;
 
     EmptyResponsePublisher(Bootstrap bootstrap, EventLoopGroup workersGroup,
                            AuthData authData, String queryId, String query, Settings settings, Limits limits,
-                           Flow.Publisher<Object[]> source) {
+                           Flow.Publisher<T[]> source) {
         this.bootstrap = bootstrap;
         this.workersGroup = workersGroup;
         this.authData = authData;
@@ -66,18 +66,8 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
             if (!WIP.get() && n > 0 && WIP.compareAndSet(false, true)) {
                 cf = bootstrap.connect();
                 cf.channel().attr(QUERY_CONTEXT_ATTR)
-                        .set(new SendDataQueryContext(authData, queryId, query, settings, limits, cf.channel(), source, s,
+                        .set(new SendDataQueryContext<>(authData, queryId, query, settings, limits, cf.channel(), source, s,
                                 workersGroup));
-
-                if (settings.isCompressionEnabled()) {
-                    cf.channel().attr(CH_SERVER_COMPRESSION_METHOD_ATTRIBUTE).set(settings.getNetworkCompressionMethod());
-                    cf.channel().attr(CH_SERVER_COMPRESSION_LEVEL_ATTRIBUTE).set(settings.getNetworkZstdCompressionLevel());
-                    cf.channel().pipeline().remove(BLOCK_ENCODER);
-
-                    cf.channel().pipeline()
-                            .addFirst(workersGroup, BLOCK_COMPRESSOR, BLOCK_COMPRESSING_HANDLER)
-                            .addAfter(workersGroup, PACKET_DECODER, "blockDecompressor", BLOCK_DECOMPRESSING_HANDLER);
-                }
 
                 cf.addListener(this);
             }
@@ -96,6 +86,17 @@ final class EmptyResponsePublisher implements Flow.Publisher<Void> {
         @Override
         public void operationComplete(Future<? super Void> future) {
             if (future.isSuccess()) {
+                // set additional settings
+                if (settings.isCompressionEnabled()) {
+                    cf.channel().attr(CH_SERVER_COMPRESSION_METHOD_ATTRIBUTE).set(settings.getNetworkCompressionMethod());
+                    cf.channel().attr(CH_SERVER_COMPRESSION_LEVEL_ATTRIBUTE).set(settings.getNetworkZstdCompressionLevel());
+                    cf.channel().pipeline().remove(BLOCK_ENCODER);
+
+                    cf.channel().pipeline()
+                            .addFirst(workersGroup, BLOCK_COMPRESSOR, BLOCK_COMPRESSING_HANDLER)
+                            .addAfter(workersGroup, PACKET_DECODER, "blockDecompressor", BLOCK_DECOMPRESSING_HANDLER);
+                }
+
                 QueryContext context = cf.channel().attr(QUERY_CONTEXT_ATTR).get();
                 context.onChannelConnected();
             } else {

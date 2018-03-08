@@ -2,6 +2,7 @@ package io.achord;
 
 import com.github.luben.zstd.Zstd;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import net.jpountz.lz4.LZ4Compressor;
@@ -20,12 +21,12 @@ import static io.netty.buffer.Unpooled.*;
 public enum CompressionMethod {
     LZ4(1, 0x82) {
         @Override
-        ByteBuf compress(ByteBuf input, long level) {
+        ByteBuf compress(ByteBuf input, long level, ByteBufAllocator alloc) {
             try {
                 int uncompressedSize = input.readableBytes();
                 int maxBound = HEADER_SIZE + lz4CompressBound(uncompressedSize);
-                ByteBuf compressed = Unpooled.directBuffer(maxBound);
-                compressed.writeByte(getMethodByte())
+                ByteBuf compressed = alloc.directBuffer(maxBound)
+                        .writeByte(getMethodByte())
                         .writerIndex(maxBound);
 
                 // use fastest possible instance for compression (and java-instance should be used for decompression)
@@ -42,7 +43,7 @@ public enum CompressionMethod {
 
                 UInt128 hash = CityHash_v1_0_2.CityHash128(compressed, compressedSize);
                 return wrappedBuffer(
-                        buffer(16)
+                        alloc.directBuffer(16)
                                 .writeLongLE(hash.first)
                                 .writeLongLE(hash.second),
                         compressed);
@@ -73,7 +74,7 @@ public enum CompressionMethod {
     },
     LZ4HC(2, 0x82) {
         @Override
-        ByteBuf compress(ByteBuf input, long level) {
+        ByteBuf compress(ByteBuf input, long level, ByteBufAllocator alloc) {
             try {
                 int uncompressedSize = input.readableBytes();
                 ByteBuf compressed = Unpooled.directBuffer(HEADER_SIZE + lz4CompressBound(uncompressedSize));
@@ -111,7 +112,7 @@ public enum CompressionMethod {
 
     ZSTD(3, 0x90) {
         @Override
-        ByteBuf compress(ByteBuf input, long level) {
+        ByteBuf compress(ByteBuf input, long level, ByteBufAllocator alloc) {
             try {
                 int uncompressedSize = input.readableBytes();
                 ByteBuf compressed = Unpooled.directBuffer((int) (HEADER_SIZE + Zstd.compressBound(uncompressedSize)));
@@ -145,18 +146,19 @@ public enum CompressionMethod {
 
     NONE(4, 0x02) {
         @Override
-        ByteBuf compress(ByteBuf input, long level) {
-            ByteBuf header = buffer(9)
+        ByteBuf compress(ByteBuf input, long level, ByteBufAllocator alloc) {
+            ByteBuf header = alloc.directBuffer(9)
                     .writeByte(getMethodByte())
                     .writeIntLE(HEADER_SIZE + input.readableBytes())
                     .writeIntLE(input.readableBytes());
 
-            ByteBuf compressed = wrappedBuffer(header, input);
+            ByteBuf compressed = alloc.compositeBuffer(2)
+                    .addComponents(true, header, input);
 
             UInt128 hash = CityHash_v1_0_2.CityHash128(compressed, compressed.readableBytes());
             return compositeBuffer(2)
                     .addComponents(
-                            buffer(16)
+                            alloc.directBuffer(16)
                                     .writeLongLE(hash.first)
                                     .writeLongLE(hash.second), compressed);
 
@@ -187,7 +189,7 @@ public enum CompressionMethod {
         return id;
     }
 
-    abstract ByteBuf compress(ByteBuf input, long level);
+    abstract ByteBuf compress(ByteBuf input, long level, ByteBufAllocator alloc);
 
     abstract ByteBuf decompress(ByteBuf input, int decompressedSize);
 

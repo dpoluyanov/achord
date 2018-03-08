@@ -14,7 +14,7 @@ import static io.achord.EmptyResponsePublisher.BLOCK_COMPRESSOR;
  * @author Camelion
  * @since 14/02/2018
  */
-final class SendDataQueryContext implements QueryContext {
+final class SendDataQueryContext<T> implements QueryContext {
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTED = 1;
     private static final int STATE_SERVER_INFO_RECEIVED = 2;
@@ -24,7 +24,7 @@ final class SendDataQueryContext implements QueryContext {
     private final String queryId;
     private final Settings settings;
     private final Limits limits;
-    private final Flow.Publisher<Object[]> source;
+    private final Flow.Publisher<T[]> source;
     private final Channel channel;
     private final Flow.Subscriber<? super Void> s;
     private final EventLoopGroup workersGroup;
@@ -34,7 +34,7 @@ final class SendDataQueryContext implements QueryContext {
     SendDataQueryContext(AuthData authData, String queryId,
                          String query, Settings settings, Limits limits,
                          Channel channel,
-                         Flow.Publisher<Object[]> source, Flow.Subscriber<? super Void> s, EventLoopGroup workersGroup) {
+                         Flow.Publisher<T[]> source, Flow.Subscriber<? super Void> s, EventLoopGroup workersGroup) {
         this.authData = authData;
         this.query = query;
         this.queryId = queryId;
@@ -80,7 +80,7 @@ final class SendDataQueryContext implements QueryContext {
         if ((state = STATE.compareAndExchange(STATE_SERVER_INFO_RECEIVED, STATE_SAMPLE_BLOCK_RECEIVED)) == STATE_SERVER_INFO_RECEIVED) {
             // eventLoop for executing all onNext/onSubscribe operations
             EventLoop eventLoop = workersGroup.next();
-            ObjectsToBlockProcessor processor = new ObjectsToBlockProcessor(block, eventLoop, channel.alloc());
+            ObjectsToBlockProcessor<T> processor = new ObjectsToBlockProcessor<>(block, eventLoop, channel.alloc());
             DataBlockSender blockSender = new DataBlockSender(eventLoop);
 
             if (channel.pipeline().get(BLOCK_COMPRESSOR) != null) {

@@ -55,7 +55,7 @@ final class CityHash_v1_0_2 {
     }
 
     private static long HashLen16(long u, long v) {
-        return Hash128to64(new UInt128(u, v));
+        return Hash128to64(UInt128.of(u, v));
     }
 
     private static long HashLen0to16(ByteBuf s, int index, int len) {
@@ -100,7 +100,7 @@ final class CityHash_v1_0_2 {
         a += x;
         a += y;
         b += Rotate(a, 44);
-        return new UInt128(a + z, b + c);
+        return UInt128.of(a + z, b + c);
     }
 
     // Return a 16-byte hash for s[0] ... s[31], a, and b.  Quick and dirty.
@@ -166,7 +166,7 @@ final class CityHash_v1_0_2 {
         }
         a = HashLen16(a, c);
         b = HashLen16(d, b);
-        return new UInt128(a ^ b, HashLen16(b, a));
+        return UInt128.of(a ^ b, HashLen16(b, a));
     }
 
     static long CityHash64(ByteBuf s, int index, int len) {
@@ -237,8 +237,8 @@ final class CityHash_v1_0_2 {
         long wFirst = Rotate(y + z, 35) * k1 + x;
         long wSecond = Rotate(x + Fetch64(s, index + 88), 53) * k1;
 
-//        v = Tuples.of(vFirst, vSecond);
-//        w = Tuples.of(wFirst, wSecond);
+//        v = UInt128.of(vFirst, vSecond);
+//        w = UInt128.of(wFirst, wSecond);
 
         // This is the same inner loop as CityHash64(), manually unrolled.
         do {
@@ -299,7 +299,7 @@ final class CityHash_v1_0_2 {
         // different 48-byte-to-8-byte hashes to get a 16-byte final result.
         x = HashLen16(x, vFirst);
         y = HashLen16(y, wFirst);
-        return new UInt128(HashLen16(x + vSecond, wSecond) + y,
+        return UInt128.of(HashLen16(x + vSecond, wSecond) + y,
                 HashLen16(x + wSecond, y + vSecond));
     }
 
@@ -307,16 +307,15 @@ final class CityHash_v1_0_2 {
         if (len >= 16) {
             return CityHash128WithSeed(s, 16,
                     len - 16,
-                    new UInt128(Fetch64(s, 0) ^ k3,
+                    UInt128.of(Fetch64(s, 0) ^ k3,
                             Fetch64(s, 8)));
         } else if (len >= 8) {
             return CityHash128WithSeed(null,
                     0, 0,
-                    new UInt128(Fetch64(s, 0) ^ (len * k0),
+                    UInt128.of(Fetch64(s, 0) ^ (len * k0),
                             Fetch64(s, len - 8) ^ k1));
         } else {
-            return CityHash128WithSeed(s, 0, len, new UInt128(k0, k1));
+            return CityHash128WithSeed(s, 0, len, UInt128.of(k0, k1));
         }
     }
 }
- 

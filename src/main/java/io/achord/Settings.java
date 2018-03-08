@@ -8,7 +8,6 @@ import java.util.Objects;
 
 import static io.achord.ClientMessage.writeStringBinary;
 import static io.achord.ClientMessage.writeVarUInt;
-import static java.util.Map.entry;
 
 /**
  * @author Camelion
@@ -42,15 +41,11 @@ final class Settings {
                 .value;
     }
 
+    void put(String key, Setting setting) {
+        settings.put(key, setting);
+    }
+
     static abstract class Setting {
-        static Map.Entry<String, SettingCompressionMethod> networkCompressionMethod(CompressionMethod method) {
-            return entry(NETWORK_COMPRESSION_METHOD, new SettingCompressionMethod(method));
-        }
-
-        static Map.Entry<String, SettingInt64> networkZstdCompressionLevel(long value) {
-            return entry(NETWORK_ZSTD_COMPRESSION_LEVEL, new SettingInt64(value));
-        }
-
         abstract void writeTo(ByteBuf buf);
     }
 
@@ -71,7 +66,7 @@ final class Settings {
     static final class SettingCompressionMethod extends Setting {
         final CompressionMethod value;
 
-        private SettingCompressionMethod(CompressionMethod value) {
+        SettingCompressionMethod(CompressionMethod value) {
             this.value = Objects.requireNonNull(value);
         }
 

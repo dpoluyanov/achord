@@ -1,5 +1,6 @@
 package io.achord;
 
+import io.achord.Settings.SettingCompressionMethod;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -14,6 +15,7 @@ import java.util.concurrent.Flow;
 import static io.achord.ClickHousePacketEncoder.CLICK_HOUSE_PACKET_ENCODER;
 import static io.achord.ClickHouseServerMessageHandler.CLICK_HOUSE_SERVER_MESSAGE_HANDLER;
 import static io.achord.DataBlockEncoder.DATA_BLOCK_ENCODER;
+import static io.achord.Settings.NETWORK_COMPRESSION_METHOD;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 
 /**
@@ -33,6 +35,7 @@ public final class ClickHouseClient implements AutoCloseable {
     private String password = "";
     private Settings settings = new Settings();
     private Limits limits = new Limits();
+    private CompressionMethod compressionMethod;
 
     public ClickHouseClient() {
         // todo make № of threads customizable, like whole group
@@ -41,9 +44,9 @@ public final class ClickHouseClient implements AutoCloseable {
                 // todo create I/O group and channel selection (may be through property but prefer native)
                 .group(new NioEventLoopGroup())
                 .channel(NioSocketChannel.class)
-                // defaults
+                // defaults, can be overridden
                 .remoteAddress("localhost", 9000)
-                // todo make configurable, because on macosx it shouldn't clash with Nagle Algorithm
+                // todo make configurable, because on macosx there are no clashes with Nagle's Algorithm
                 .option(TCP_NODELAY, true)
                 .handler(new ChannelInitializer() {
                     @Override
@@ -88,11 +91,16 @@ public final class ClickHouseClient implements AutoCloseable {
         return this;
     }
 
+    public ClickHouseClient compression(CompressionMethod method) {
+        this.settings.put(NETWORK_COMPRESSION_METHOD, new SettingCompressionMethod(method));
+        return this;
+    }
+
     public Flow.Publisher<Void> sendData(String query, CHObjectsStorage storage) {
         return null;
     }
 
-    public Flow.Publisher<Void> sendData(String query, Flow.Publisher<Object[]> source) {
+    public <T> Flow.Publisher<Void> sendData(String query, Flow.Publisher<T[]> source) {
         return this.sendData("", query, source);
     }
 
@@ -104,10 +112,10 @@ public final class ClickHouseClient implements AutoCloseable {
      * @param source reactive data publisher
      * @return empty {@code <Vo  id>} publisher that signals success or error after insert process ends
      */
-    public Flow.Publisher<Void> sendData(String queryId, String query, Flow.Publisher<Object[]> source) {
+    public <T> Flow.Publisher<Void> sendData(String queryId, String query, Flow.Publisher<T[]> source) {
         query += " FORMAT Native";
         AuthData authData = new AuthData(database, username, password);
-        return new EmptyResponsePublisher(b.clone(), workersGroup, authData, queryId, query, settings, limits, source);
+        return new EmptyResponsePublisher<>(b.clone(), workersGroup, authData, queryId, query, settings, limits, source);
     }
 
     @Override

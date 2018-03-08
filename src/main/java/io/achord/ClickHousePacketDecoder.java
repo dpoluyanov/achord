@@ -76,7 +76,7 @@ final class ClickHousePacketDecoder extends ReplayingDecoder<Void> {
                     long t1 = in.readLongLE();
                     long t2 = in.readLongLE();
 
-                    byte compressionMethod = in.readByte();
+                    int compressionMethod = in.readByte() & 0xff;
                     int compressedSize = in.readIntLE();
                     int decompressedSize = in.readIntLE();
 

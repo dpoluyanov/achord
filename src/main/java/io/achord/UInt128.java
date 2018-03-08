@@ -12,4 +12,8 @@ final class UInt128 {
         this.first = first;
         this.second = second;
     }
+
+    static UInt128 of(long first, long second) {
+        return new UInt128(first, second);
+    }
 }

@@ -21,13 +21,16 @@ final class DataBlockEncoder extends MessageToByteEncoder<DataBlock> {
 
     @Override
     protected void encode(ChannelHandlerContext ctx, DataBlock block, ByteBuf out) {
+        writeHeader(block, out);
         writeBlock(block, out);
     }
 
-    static void writeBlock(DataBlock block, ByteBuf out) {
+    static void writeHeader(DataBlock block, ByteBuf out) {
         writeVarUInt(out, DATA_MSG_ID);
         writeStringBinary(out, ""); // Block name
+    }
 
+    static void writeBlock(DataBlock block, ByteBuf out) {
         block.info.write(out);
 
         ColumnWithTypeAndName[] columns = block.columns;

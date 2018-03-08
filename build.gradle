@@ -70,6 +70,7 @@ dependencies {
     testCompile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
     testRuntimeOnly group: 'javax.activation', name: 'activation', version: '1.1.1'
 
+    testCompile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.37'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'

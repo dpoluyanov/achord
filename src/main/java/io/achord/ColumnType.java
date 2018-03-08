@@ -12,6 +12,8 @@ import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 /**
  * @author Camelion
  * @since 25.12.2017
+ * <p>
+ * Need to be completely redesign, because casting objects is so expensive
  */
 enum ColumnType {
     Int8 {
@@ -39,7 +41,7 @@ enum ColumnType {
     Int32 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeIntLE(((Number) val).intValue());
+            buf.writeIntLE((Integer) val);
         }
 
         @Override
@@ -50,7 +52,7 @@ enum ColumnType {
     UInt32 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeIntLE(((Number) val).intValue());
+            buf.writeIntLE((Integer) val);
         }
 
         @Override
