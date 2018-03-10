@@ -24,16 +24,17 @@ final class BlockCompressingHandler extends MessageToByteEncoder<DataBlock> {
         CompressionMethod compressionMethod = ctx.channel().attr(CH_SERVER_COMPRESSION_METHOD_ATTRIBUTE).get();
         long level = ctx.channel().attr(CH_SERVER_COMPRESSION_LEVEL_ATTRIBUTE).get();
 
-        ByteBuf decompressed = ctx.alloc().directBuffer();
-        try {
-            writeHeader(msg, out);
-            writeBlock(msg, decompressed);
+        writeHeader(msg, out);
 
-            ByteBuf compressed = compressionMethod.compress(decompressed, level, ctx.alloc());
-            out.writeBytes(compressed);
-        } catch (Throwable e) {
-            ReferenceCountUtil.release(decompressed);
-            throw e;
+        int inStart;
+        ByteBuf in = null;
+        try {
+            in = ctx.alloc().buffer();
+            inStart = in.writerIndex();
+            writeBlock(msg, in);
+            compressionMethod.compress(in, inStart, out, level);
+        } finally {
+            ReferenceCountUtil.release(in);
         }
     }
 }

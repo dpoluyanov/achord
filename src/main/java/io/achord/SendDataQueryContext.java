@@ -3,6 +3,8 @@ package io.achord;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,6 +32,11 @@ final class SendDataQueryContext<T> implements QueryContext {
     private final EventLoopGroup workersGroup;
     private final AtomicInteger STATE = new AtomicInteger(STATE_DISCONNECTED);
     private ClickHouseServerInfo serverInfo;
+    private GenericFutureListener<Future<? super Void>> catchErrorListener = future -> {
+        if (!future.isSuccess()) {
+            onChannelExceptionCaught(future.cause());
+        }
+    };
 
     SendDataQueryContext(AuthData authData, String queryId,
                          String query, Settings settings, Limits limits,
@@ -55,7 +62,8 @@ final class SendDataQueryContext<T> implements QueryContext {
     public void onChannelConnected() {
         int state;
         if ((state = STATE.compareAndExchange(STATE_DISCONNECTED, STATE_CONNECTED)) == STATE_DISCONNECTED) {
-            channel.writeAndFlush(new HelloMessage(authData));
+            channel.writeAndFlush(new HelloMessage(authData))
+                    .addListener(catchErrorListener);
         } else {
             throw new IllegalStateException("Context expected to be in STATE_DISCONNEC8TED but got " + state);
         }
@@ -67,8 +75,10 @@ final class SendDataQueryContext<T> implements QueryContext {
         if ((state = STATE.compareAndExchange(STATE_CONNECTED, STATE_SERVER_INFO_RECEIVED)) == STATE_CONNECTED) {
             this.serverInfo = serverInfo;
 
-            channel.write(new SendQueryMessage(queryId, query, settings, limits, serverInfo.serverRevision));
-            channel.writeAndFlush(EMPTY.retain());
+            channel.write(new SendQueryMessage(queryId, query, settings, limits, serverInfo.serverRevision))
+                    .addListener(catchErrorListener);
+            channel.writeAndFlush(EMPTY.retain())
+                    .addListener(catchErrorListener);
         } else {
             throw new IllegalStateException("Context expected to be in STATE_CONNECTED but got " + state);
         }

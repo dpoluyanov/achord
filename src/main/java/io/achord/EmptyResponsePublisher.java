@@ -31,12 +31,14 @@ final class EmptyResponsePublisher<T> implements Flow.Publisher<Void> {
     private final Limits limits;
     private final Flow.Publisher<T[]> source;
     private final EventLoopGroup workersGroup;
+    private final EventLoopGroup compressionGroup;
 
-    EmptyResponsePublisher(Bootstrap bootstrap, EventLoopGroup workersGroup,
+    EmptyResponsePublisher(Bootstrap bootstrap, EventLoopGroup workersGroup, EventLoopGroup compressionGroup,
                            AuthData authData, String queryId, String query, Settings settings, Limits limits,
                            Flow.Publisher<T[]> source) {
         this.bootstrap = bootstrap;
         this.workersGroup = workersGroup;
+        this.compressionGroup = compressionGroup;
         this.authData = authData;
         this.query = query;
         this.queryId = queryId;
@@ -93,8 +95,8 @@ final class EmptyResponsePublisher<T> implements Flow.Publisher<Void> {
                     cf.channel().pipeline().remove(BLOCK_ENCODER);
 
                     cf.channel().pipeline()
-                            .addFirst(workersGroup, BLOCK_COMPRESSOR, BLOCK_COMPRESSING_HANDLER)
-                            .addAfter(workersGroup, PACKET_DECODER, "blockDecompressor", BLOCK_DECOMPRESSING_HANDLER);
+                            .addFirst(compressionGroup, BLOCK_COMPRESSOR, BLOCK_COMPRESSING_HANDLER)
+                            .addAfter(compressionGroup, PACKET_DECODER, "blockDecompressor", BLOCK_DECOMPRESSING_HANDLER);
                 }
 
                 QueryContext context = cf.channel().attr(QUERY_CONTEXT_ATTR).get();

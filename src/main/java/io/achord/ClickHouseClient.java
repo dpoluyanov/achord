@@ -30,6 +30,7 @@ public final class ClickHouseClient implements AutoCloseable {
 
     private final Bootstrap b;
     private final EventLoopGroup workersGroup;
+    private final EventLoopGroup compressionGroup;
     private String database;
     private String username = database = "default";
     private String password = "";
@@ -40,6 +41,7 @@ public final class ClickHouseClient implements AutoCloseable {
     public ClickHouseClient() {
         // todo make № of threads customizable, like whole group
         workersGroup = new DefaultEventLoopGroup(2);
+        compressionGroup = new DefaultEventLoopGroup(2);
         b = new Bootstrap()
                 // todo create I/O group and channel selection (may be through property but prefer native)
                 .group(new NioEventLoopGroup())
@@ -115,7 +117,7 @@ public final class ClickHouseClient implements AutoCloseable {
     public <T> Flow.Publisher<Void> sendData(String queryId, String query, Flow.Publisher<T[]> source) {
         query += " FORMAT Native";
         AuthData authData = new AuthData(database, username, password);
-        return new EmptyResponsePublisher<>(b.clone(), workersGroup, authData, queryId, query, settings, limits, source);
+        return new EmptyResponsePublisher<>(b.clone(), workersGroup, compressionGroup, authData, queryId, query, settings, limits, source);
     }
 
     @Override

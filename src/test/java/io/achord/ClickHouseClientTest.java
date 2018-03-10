@@ -2,7 +2,6 @@ package io.achord;
 
 import io.achord.test.extensions.docker.DockerContainer;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 import ru.yandex.clickhouse.ClickHouseDataSource;
@@ -33,7 +32,7 @@ final class ClickHouseClientTest {
         dataSource = new ClickHouseDataSource("jdbc:clickhouse://localhost:8123/default");
     }
 
-    @Disabled
+    //    @Disabled
     @Test
     @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
             "--multiquery",
@@ -51,6 +50,7 @@ final class ClickHouseClientTest {
                 .verifyComplete();
     }
 
+    //    @Disabled
     @Test
     @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
             "--multiquery",
@@ -70,7 +70,7 @@ final class ClickHouseClientTest {
                 .verifyComplete();
     }
 
-    @Disabled
+    //    @Disabled
     @Test
     @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
             "--multiquery",
