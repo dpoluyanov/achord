@@ -18,7 +18,7 @@ buildscript {
 
 apply plugin: 'nebula.release'
 apply plugin: 'java'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'io.codearte.nexus-staging'
 apply plugin: 'org.junit.platform.gradle.plugin'
@@ -39,26 +39,45 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifact sourceJar {
-                classifier 'sources'
-            }
-
-            artifact javadocJar {
-                classifier 'javadoc'
-            }
-        }
-    }
+uploadArchives {
     repositories {
-        maven {
-            url "$RELEASE_REPOSITORY_URL"
-            credentials {
-                username "$NEXUS_USERNAME"
-                password "$NEXUS_PASSWORD"
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name 'Achord'
+                packaging 'jar'
+                description 'An artifact that provides reactive bridge between Java code and ClickHouse server'
+                url 'https://github.com/Camelion/cmeter'
+
+                scm {
+                    connection 'scm:git:https://github.com/Mangelion/achord'
+                    developerConnection 'scm:git:https://github.com/Mangeion/achord.git'
+                    url 'https://github.com/Mangelion/achord'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'camelion'
+                        name 'Camelion'
+                        email 'camelion.c@mail.ru'
+                    }
+                }
             }
         }
     }
@@ -105,5 +124,5 @@ nexusStaging {
     password "$NEXUS_PASSWORD"
 }
 
-closeRepository.dependsOn(publish)
-closeAndPromoteRepository.dependsOn("final")
+jar.dependsOn(check)
+closeRepository.dependsOn(uploadArchives)
