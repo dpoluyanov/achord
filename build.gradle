@@ -9,7 +9,6 @@ buildscript {
     dependencies {
 //        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
-//        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-release-plugin:latest.release'
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:latest.release"

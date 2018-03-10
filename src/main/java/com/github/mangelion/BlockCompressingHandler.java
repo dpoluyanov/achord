@@ -30,6 +30,8 @@ final class BlockCompressingHandler extends MessageToByteEncoder<DataBlock> {
             in = ctx.alloc().buffer();
             inStart = in.writerIndex();
             DataBlockEncoder.writeBlock(msg, in);
+            // todo: at this point we can switch compression method on-the-fly
+            // depending on channel writeability (zstd or lzhc if not writable and vice versa lz4)
             compressionMethod.compress(in, inStart, out, level);
         } finally {
             ReferenceCountUtil.release(in);
