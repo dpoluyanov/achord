@@ -82,4 +82,39 @@ final class ClickHouseClientTest {
             }
         }
     }
+
+    @Test
+    @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
+            "--multiquery",
+            "--query=CREATE TABLE IF NOT EXISTS default.connection_test(date Date DEFAULT toDate(datetime), datetime DateTime DEFAULT now(), value UInt64) ENGINE = MergeTree(date, (date), 8192)"})
+    void sendSmallLongMultipleTimes_withCompression() throws SQLException {
+        client = client.compression(CompressionMethod.LZ4);
+
+        Object[] data = new Object[]{1L};
+
+        Flow.Publisher<Void> result = client.sendData("INSERT INTO default.connection_test(value)",
+                publisherToFlowPublisher(
+                        range(0, 500 * 1024 * 1024)
+                                .map(i -> data)));
+
+        StepVerifier
+                .create(flowPublisherToFlux(result))
+                .verifyComplete();
+    }
+
+    @Test
+    @DockerContainer(image = "yandex/clickhouse-client", net = "host", arguments = {
+            "--multiquery",
+            "--query=CREATE TABLE IF NOT EXISTS default.connection_test(date Date DEFAULT toDate(datetime), datetime DateTime DEFAULT now(), value UInt64) ENGINE = MergeTree(date, (date), 8192)"})
+    void sendSmallLongMultipleTimes_jdbc() throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            try (ClickHouseStatement stmt = (ClickHouseStatement) connection.createStatement()) {
+                stmt.sendRowBinaryStream("INSERT INTO default.connection_test(value)",
+                        stream -> {
+                            for (int i = 0; i < 500 * 1024 * 1024; i++)
+                                stream.writeUInt64(1);
+                        });
+            }
+        }
+    }
 }
