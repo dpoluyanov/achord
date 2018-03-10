@@ -11,11 +11,11 @@ buildscript {
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
 //        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:latest.release'
 //        classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
-//        classpath 'com.netflix.nebula:nebula-release-plugin:latest.release'
+        classpath 'com.netflix.nebula:nebula-release-plugin:latest.release'
     }
 }
 
-//apply plugin: 'nebula.release'
+apply plugin: 'nebula.release'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
@@ -49,6 +49,11 @@ publishing {
             artifact javadocJar {
                 classifier 'javadoc'
             }
+        }
+    }
+    repositories {
+        maven {
+            url "$RELEASE_REPOSITORY_URL"
         }
     }
 }
