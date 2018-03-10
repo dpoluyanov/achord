@@ -94,3 +94,6 @@ test {
         includeEngines 'junit-jupiter'
     }
 }
+
+candidate.dependsOn(publish)
+release.dependsOn(publish)
