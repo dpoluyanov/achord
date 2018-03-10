@@ -7,6 +7,7 @@
 .idea/**/workspace.xml
 .idea/**/tasks.xml
 .idea/dictionaries
+.idea/compiler.xml
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
@@ -116,3 +117,4 @@ Temporary Items
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+gradle.properties
