@@ -19,5 +19,5 @@ Add dependency into your `pom.xml`
 
 Add following dependency into your `build.gradle` script
 ```groovy
-compile: "com.github.mangelion:achord:0.1.0"
+compile "com.github.mangelion:achord:0.1.0"
 ```
