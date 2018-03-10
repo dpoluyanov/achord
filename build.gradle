@@ -126,3 +126,4 @@ nexusStaging {
 
 jar.dependsOn(check)
 closeRepository.dependsOn(uploadArchives)
+tasks.release.finalizedBy(closeAndPromoteRepository)
