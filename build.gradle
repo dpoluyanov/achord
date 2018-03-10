@@ -10,8 +10,9 @@ buildscript {
 //        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
 //        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:latest.release'
-//        classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
+        classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-release-plugin:latest.release'
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:latest.release"
     }
 }
 
@@ -19,6 +20,7 @@ apply plugin: 'nebula.release'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
+apply plugin: 'io.codearte.nexus-staging'
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 repositories {
@@ -54,6 +56,10 @@ publishing {
     repositories {
         maven {
             url "$RELEASE_REPOSITORY_URL"
+            credentials {
+                username "$NEXUS_USERNAME"
+                password "$NEXUS_PASSWORD"
+            }
         }
     }
 }
@@ -95,5 +101,9 @@ test {
     }
 }
 
-candidate.dependsOn(publish)
-release.dependsOn(publish)
+nexusStaging {
+    username "$NEXUS_USERNAME"
+    password "$NEXUS_PASSWORD"
+}
+
+closeAndPromoteRepository.dependsOn("final")
