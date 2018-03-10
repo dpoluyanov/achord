@@ -1,5 +1,5 @@
 On Java 9 performance can be even better with `--add-opens java/base/jdk.internal.misc=ALL-UNNAMED`
-(because Netty initializes uninitialized arrays not filled with zeros).
+(because Netty allocates uninitialized arrays not filled with zeros).
 
 Java 9 is a minimal compatible version because reactive bridge based on [JEP 266](http://openjdk.java.net/jeps/266)
 
