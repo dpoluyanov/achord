@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Mangelion
+ * Copyright 2017-2018 Mangelion
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,12 +118,12 @@ public final class DockerExtension implements BeforeAllCallback, BeforeTestExecu
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         findAnnotationAndStartContainer(context);
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         stopContainer(context);
     }
 }

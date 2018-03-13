@@ -10,16 +10,10 @@ buildscript {
 //        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
-        classpath 'com.netflix.nebula:nebula-release-plugin:latest.release'
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:latest.release"
     }
 }
 
-apply plugin: 'nebula.release'
 apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'signing'
-apply plugin: 'io.codearte.nexus-staging'
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 repositories {
@@ -30,73 +24,13 @@ repositories {
 group 'com.github.mangelion'
 sourceCompatibility = 1.9
 
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar) {
-    from javadoc
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-
-            pom.project {
-                name 'Achord'
-                packaging 'jar'
-                description 'An artifact that provides reactive bridge between Java code and ClickHouse server'
-                url 'https://github.com/Camelion/cmeter'
-
-                scm {
-                    connection 'scm:git:https://github.com/Mangelion/achord'
-                    developerConnection 'scm:git:https://github.com/Mangeion/achord.git'
-                    url 'https://github.com/Mangelion/achord'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id 'camelion'
-                        name 'Camelion'
-                        email 'camelion.c@mail.ru'
-                    }
-                }
-            }
-        }
-    }
-}
-
-artifacts {
-    archives javadocJar, sourceJar
-}
-
-signing {
-    sign configurations.archives
-}
-
 dependencies {
     compile group: 'io.netty', name: 'netty-buffer', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
 //    compileOnly group: 'io.netty', name: 'netty-transport-native-epoll', version: nettyVersion
 //    compileOnly group: 'io.netty', name: 'netty-transport-native-kqueue', version: nettyVersion, classifier: 'osx-x86_64'
 
-    compile group: 'org.jctools', name: 'jctools-core', version: '2.1.1'
+    compile group: 'org.jctools', name: 'jctools-core', version: '2.1.2'
     compile group: 'org.lz4', name: 'lz4-java', version: '1.4.1'
     compile group: 'com.github.luben', name: 'zstd-jni', version: '1.3.3-4'
 }
@@ -106,7 +40,7 @@ dependencies {
     testCompile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
     testRuntimeOnly group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-    testCompile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.37'
+    testCompile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.38'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
@@ -115,15 +49,6 @@ dependencies {
 test {
     useJUnitPlatform {
         includeEngines 'junit-jupiter'
+        excludeTags 'jdbc-comparison'
     }
 }
-
-nexusStaging {
-    username "$NEXUS_USERNAME"
-    password "$NEXUS_PASSWORD"
-}
-
-jar.dependsOn(check)
-closeRepository.dependsOn(uploadArchives)
-
-tasks.final.finalizedBy(closeAndPromoteRepository)

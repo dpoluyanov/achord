@@ -1,3 +1,19 @@
+/*
+ * Copyright 2017-2018 Mangelion
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.github.mangelion;
 
 import io.netty.buffer.ByteBuf;
@@ -18,7 +34,7 @@ final class BlockCompressingHandler extends MessageToByteEncoder<DataBlock> {
     static final BlockCompressingHandler BLOCK_COMPRESSING_HANDLER = new BlockCompressingHandler();
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, DataBlock msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, DataBlock msg, ByteBuf out) {
         CompressionMethod compressionMethod = ctx.channel().attr(CH_SERVER_COMPRESSION_METHOD_ATTRIBUTE).get();
         long level = ctx.channel().attr(CH_SERVER_COMPRESSION_LEVEL_ATTRIBUTE).get();
 
