@@ -21,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.SynchronousSink;
-import reactor.test.StepVerifier;
 import ru.yandex.clickhouse.ClickHouseDataSource;
 import ru.yandex.clickhouse.ClickHouseStatement;
 
@@ -38,6 +37,7 @@ import static reactor.core.publisher.Flux.generate;
 /**
  * @author Camelion
  * @since 11/02/2018
+ * Only comparisons test with jdbc in this class
  */
 @DockerContainer(image = "yandex/clickhouse-server", ports = {"9000:9000", "8123:8123"})
 final class ClickHouseClientTest {
@@ -63,9 +63,7 @@ final class ClickHouseClientTest {
                         generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
                                 .take(NUMBERS_COUNT)));
 
-        StepVerifier
-                .create(flowPublisherToFlux(result))
-                .verifyComplete();
+        flowPublisherToFlux(result).blockLast();
     }
 
     @Test
@@ -82,9 +80,7 @@ final class ClickHouseClientTest {
                         generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
                                 .take(NUMBERS_COUNT)));
 
-        StepVerifier
-                .create(flowPublisherToFlux(result))
-                .verifyComplete();
+        flowPublisherToFlux(result).blockLast();
     }
 
     @Test
@@ -118,9 +114,7 @@ final class ClickHouseClientTest {
                         generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
                                 .take(NUMBERS_COUNT)));
 
-        StepVerifier
-                .create(flowPublisherToFlux(result))
-                .verifyComplete();
+        flowPublisherToFlux(result).blockLast();
     }
 
     @Test

@@ -23,12 +23,12 @@ import io.netty.buffer.ByteBuf;
  * @since 24.12.2017
  */
 final class ColumnWithTypeAndName {
-    final ColumnType type;
+    final byte type;
     final ByteBuf data;
     final String name;
 
     // todo may be lazy allocation with predefined size would be more effective
-    ColumnWithTypeAndName(ColumnType type, String name, ByteBuf data) {
+    ColumnWithTypeAndName(byte type, String name, ByteBuf data) {
         this.type = type;
         this.name = name;
         this.data = data;

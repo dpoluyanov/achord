@@ -161,7 +161,7 @@ final class ObjectsToBlockProcessor<T> implements Flow.Processor<T[], DataBlock>
                 if ((left = requested.decrementAndGet()) >= 0) {
                     for (int i = 0; i < columns.length; i++) {
                         ColumnWithTypeAndName c = columns[i];
-                        c.type.write(c.data, item[i]);
+                        ColumnType.write(c.type, item[i], c.data);
                     }
 
                     if (++rows >= BLOCK_SIZE) {

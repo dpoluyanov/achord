@@ -7,13 +7,14 @@ buildscript {
         maven { url 'https://plugins.gradle.org/m2/' }
     }
     dependencies {
-//        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
+        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
     }
 }
 
 apply plugin: 'java'
+apply plugin: "me.champeau.gradle.jmh"
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 repositories {
@@ -33,6 +34,11 @@ dependencies {
     compile group: 'org.jctools', name: 'jctools-core', version: '2.1.2'
     compile group: 'org.lz4', name: 'lz4-java', version: '1.4.1'
     compile group: 'com.github.luben', name: 'zstd-jni', version: '1.3.3-4'
+}
+
+dependencies {
+    jmh 'org.openjdk.jmh:jmh-core:latest.release'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:latest.release'
 }
 
 dependencies {

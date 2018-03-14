@@ -62,12 +62,12 @@ final class ClickHousePacketDecoder extends ReplayingDecoder<Void> {
         ColumnWithTypeAndName[] cs = new ColumnWithTypeAndName[columns];
         for (int i = 0; i < columns; i++) {
             String columnName = readStringBinary(in);
-            ColumnType type = ColumnType.valueOf(readStringBinary(in));
+            byte type = ColumnType.valueOf(readStringBinary(in));
 
             ColumnWithTypeAndName column = cs[i] = new ColumnWithTypeAndName(type, columnName, ctx.alloc().directBuffer());
 
             if (rows > 0) {
-                column.type.read(in, column, rows);
+                ColumnType.read(type, in, column.data, rows);
             }
         }
 

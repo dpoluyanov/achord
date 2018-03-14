@@ -57,7 +57,7 @@ final class DataBlockEncoder extends MessageToByteEncoder<DataBlock> {
         for (int i = 0; i < columns.length; i++) {
             ColumnWithTypeAndName c = columns[i];
             writeStringBinary(out, c.name);
-            writeStringBinary(out, c.type.name());
+            writeStringBinary(out, ColumnType.valueOf(c.type));
             if (block.rows > 0) {
                 out.writeBytes(c.data);
             }
