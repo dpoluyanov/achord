@@ -35,7 +35,7 @@ enum ColumnType {
     Int8 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeByte(((Number) val).byteValue());
+            buf.writeByte((byte) val);
         }
 
         @Override
@@ -46,7 +46,7 @@ enum ColumnType {
     UInt8 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeByte(((Number) val).byteValue());
+            buf.writeByte((byte) val);
         }
 
         @Override
@@ -57,7 +57,7 @@ enum ColumnType {
     Int32 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeIntLE((Integer) val);
+            buf.writeIntLE((int) val);
         }
 
         @Override
@@ -68,7 +68,7 @@ enum ColumnType {
     UInt32 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeIntLE((Integer) val);
+            buf.writeIntLE((int) val);
         }
 
         @Override
@@ -79,7 +79,7 @@ enum ColumnType {
     Int64 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeLongLE(((Number) val).longValue());
+            buf.writeLongLE((long) val);
         }
 
         @Override
@@ -90,7 +90,7 @@ enum ColumnType {
     UInt64 {
         @Override
         void write(ByteBuf buf, Object val) {
-            buf.writeLongLE(((Number) val).longValue());
+            buf.writeLongLE((long) val);
         }
 
         @Override
