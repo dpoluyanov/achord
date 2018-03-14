@@ -11,7 +11,7 @@ Add dependency into your `pom.xml`
 <dependency>
   <groupId>com.github.mangelion</groupId>
   <artifactId>achord</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
@@ -19,7 +19,7 @@ Add dependency into your `pom.xml`
 
 Add following dependency into your `build.gradle` script
 ```groovy
-compile "com.github.mangelion:achord:0.1.0"
+compile "com.github.mangelion:achord:0.1.1"
 ```
 
 # Usage
