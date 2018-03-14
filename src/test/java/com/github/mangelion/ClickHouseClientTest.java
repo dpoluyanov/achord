@@ -20,6 +20,7 @@ import com.github.mangelion.test.extensions.docker.DockerContainer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.SynchronousSink;
 import reactor.test.StepVerifier;
 import ru.yandex.clickhouse.ClickHouseDataSource;
 import ru.yandex.clickhouse.ClickHouseStatement;
@@ -28,10 +29,11 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.Flow;
+import java.util.function.Consumer;
 
 import static reactor.adapter.JdkFlowAdapter.flowPublisherToFlux;
 import static reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher;
-import static reactor.core.publisher.Flux.range;
+import static reactor.core.publisher.Flux.generate;
 
 /**
  * @author Camelion
@@ -58,8 +60,8 @@ final class ClickHouseClientTest {
 
         Flow.Publisher<Void> result = client.sendData("INSERT INTO default.connection_test_uint32(value)",
                 publisherToFlowPublisher(
-                        range(0, NUMBERS_COUNT)
-                                .map(i -> data)));
+                        generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
+                                .take(NUMBERS_COUNT)));
 
         StepVerifier
                 .create(flowPublisherToFlux(result))
@@ -77,8 +79,8 @@ final class ClickHouseClientTest {
 
         Flow.Publisher<Void> result = client.sendData("INSERT INTO default.connection_test_uint32(value)",
                 publisherToFlowPublisher(
-                        range(0, NUMBERS_COUNT)
-                                .map(i -> data)));
+                        generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
+                                .take(NUMBERS_COUNT)));
 
         StepVerifier
                 .create(flowPublisherToFlux(result))
@@ -113,8 +115,8 @@ final class ClickHouseClientTest {
 
         Flow.Publisher<Void> result = client.sendData("INSERT INTO default.connection_test_uint64(value)",
                 publisherToFlowPublisher(
-                        range(0, NUMBERS_COUNT)
-                                .map(i -> data)));
+                        generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
+                                .take(NUMBERS_COUNT)));
 
         StepVerifier
                 .create(flowPublisherToFlux(result))
