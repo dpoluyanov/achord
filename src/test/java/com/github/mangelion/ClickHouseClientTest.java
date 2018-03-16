@@ -41,7 +41,7 @@ import static reactor.core.publisher.Flux.generate;
  */
 @DockerContainer(image = "yandex/clickhouse-server", ports = {"9000:9000", "8123:8123"})
 final class ClickHouseClientTest {
-    private static final int NUMBERS_COUNT = 500 * 1024 * 1024;
+    private static final int NUMBERS_COUNT = 1024 * 1024 * 1024;
     private ClickHouseClient client;
     private DataSource dataSource;
 

@@ -21,6 +21,8 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.util.ReferenceCountUtil;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -41,17 +43,28 @@ final class ObjectsToBlockProcessor<T> implements Flow.Processor<T[], DataBlock>
     private static final int CANCELLED = 4;
     private static final AtomicIntegerFieldUpdater<ObjectsToBlockProcessor> STATE =
             AtomicIntegerFieldUpdater.newUpdater(ObjectsToBlockProcessor.class, "state");
+    private static final VarHandle WRITE_LOCK;
+
+    static {
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        try {
+            WRITE_LOCK = l.findVarHandle(ObjectsToBlockProcessor.class, "writeLock", int.class);
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
+    }
 
     private final AtomicBoolean bufferReleased = new AtomicBoolean();
     private final ByteBufAllocator alloc;
     private final EventLoop eventLoop;
     private final AtomicLong requested = new AtomicLong();
-    volatile DataBlock sample;
+    private volatile DataBlock sample;
     private volatile Flow.Subscription subscription;
     private volatile int state = UNSUBSCRIBED;
     private volatile Flow.Subscriber<? super DataBlock> subscriber;
     private volatile ColumnWithTypeAndName[] columns;
-    private volatile int rows;
+    private int rows;
+    private volatile int writeLock = 0;
 
     ObjectsToBlockProcessor(DataBlock sample, EventLoop eventLoop, ByteBufAllocator alloc) {
         this.sample = sample;
@@ -98,7 +111,6 @@ final class ObjectsToBlockProcessor<T> implements Flow.Processor<T[], DataBlock>
             throw new IllegalStateException("onSubscribe come to unexpected state");
         }
     }
-
 
     private void recreateColumns() {
         ColumnWithTypeAndName[] cs = new ColumnWithTypeAndName[sample.columns.length];
@@ -148,34 +160,47 @@ final class ObjectsToBlockProcessor<T> implements Flow.Processor<T[], DataBlock>
     // we can do better without synchronization and with avoiding all contention problems but something later
     // with another algorithm that could be applied as below:
     //      1) write into current block under cas
-    //      2) if cas write is failed create new block and write into (but keep the same counter)
+    //      2) if cas write is failed create(or get from special cache) new block and write into (but keep global counter)
     //      3) after rows counter exceeded threshold (1024 * 1024) switch this couple of blocks into merge state
     //         note: neither new writes can be done to this blocks.
     //      4) when last thread writes into blocks in merge state (probably should be controlled by another counter)
     //         the thread pushes this blocks into subscriber onNext chain
     @Override
-    public synchronized void onNext(T[] item) {
+    public void onNext(T[] item) {
         try {
             if (state == WIP) {
                 long left;
                 if ((left = requested.decrementAndGet()) >= 0) {
-                    for (int i = 0; i < columns.length; i++) {
-                        ColumnWithTypeAndName c = columns[i];
-                        ColumnType.write(c.type, item[i], c.data);
+                    DataBlock blockToWrite = null;
+                    for (; ; ) {
+                        if (WRITE_LOCK.compareAndSet(this, 0, 1)) {
+                            try {
+                                for (int i = 0; i < columns.length; i++) {
+                                    ColumnWithTypeAndName c = columns[i];
+                                    ColumnType.write(c.type, item[i], c.data);
+                                }
+
+                                if (++rows >= BLOCK_SIZE) {
+                                    blockToWrite = new DataBlock(sample.info, columns, rows);
+                                    recreateColumns();
+                                }
+
+                                break;
+                            } finally {
+                                writeLock = 0;
+                            }
+                        }
                     }
 
-                    if (++rows >= BLOCK_SIZE) {
-                        DataBlock block = new DataBlock(sample.info, columns, rows);
-
+                    if (blockToWrite != null) {
                         try {
-                            subscriber.onNext(block);
+                            subscriber.onNext(blockToWrite);
                         } catch (Throwable e) {
                             // block can does not reach any channel handler
-                            if (block.refCnt() > 0)
-                                ReferenceCountUtil.release(block);
+                            if (blockToWrite.refCnt() > 0)
+                                ReferenceCountUtil.release(blockToWrite);
                             throw e;
                         }
-                        recreateColumns();
                     }
                 } else {
                     throw new IllegalStateException("onNext produces unexpected count of elements");

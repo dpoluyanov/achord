@@ -7,14 +7,11 @@ buildscript {
         maven { url 'https://plugins.gradle.org/m2/' }
     }
     dependencies {
-        classpath 'me.champeau.gradle:jmh-gradle-plugin:latest.release'
         classpath 'org.junit.platform:junit-platform-gradle-plugin:latest.release'
         classpath 'com.netflix.nebula:nebula-project-plugin:latest.release'
     }
 }
-
 apply plugin: 'java'
-apply plugin: "me.champeau.gradle.jmh"
 apply plugin: 'org.junit.platform.gradle.plugin'
 
 repositories {
@@ -24,6 +21,10 @@ repositories {
 
 group 'com.github.mangelion'
 sourceCompatibility = 1.9
+
+sourceSets {
+    jmh
+}
 
 dependencies {
     compile group: 'io.netty', name: 'netty-buffer', version: nettyVersion
@@ -37,8 +38,10 @@ dependencies {
 }
 
 dependencies {
-    jmh 'org.openjdk.jmh:jmh-core:latest.release'
-    jmh 'org.openjdk.jmh:jmh-generator-annprocess:latest.release'
+    jmhCompile project
+    jmhCompile 'org.openjdk.jmh:jmh-core:latest.release'
+    jmhCompile 'org.openjdk.jmh:jmh-generator-annprocess:latest.release'
+    jmhCompile group: 'io.netty', name: 'netty-buffer', version: nettyVersion
 }
 
 dependencies {
@@ -57,4 +60,15 @@ test {
         includeEngines 'junit-jupiter'
         excludeTags 'jdbc-comparison'
     }
+}
+
+
+task jmh(type: JavaExec) {
+    classpath = sourceSets.jmh.runtimeClasspath
+    main = 'org.openjdk.jmh.Main'
+    args '.*'
+    args '-prof'
+    args 'dtraceasm'
+
+    println commandLine
 }
