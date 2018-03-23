@@ -73,6 +73,16 @@ compileJava {
     }
 }
 
+compileJmhJava {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+        ]
+        classpath = files()
+    }
+}
+
 task jmh(type: JavaExec) {
     classpath = sourceSets.jmh.runtimeClasspath
     main = 'org.openjdk.jmh.Main'
