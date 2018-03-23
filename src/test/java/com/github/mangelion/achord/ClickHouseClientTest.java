@@ -29,13 +29,13 @@ import static reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher;
 import static reactor.core.publisher.Flux.generate;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 11/02/2018
  * Checks integration with ClickHouse server. Could be considered as slow IT tests.
  */
 @DockerContainer(image = "yandex/clickhouse-server", ports = {"9000:9000"})
 final class ClickHouseClientTest {
-    static final int NUMBERS_COUNT = 64 * 1024 * 1024;
+    static final int NUMBERS_COUNT = 512 * 1024 * 1024;
     private ClickHouseClient client;
 
     @BeforeEach
@@ -95,13 +95,13 @@ final class ClickHouseClientTest {
     @Test
     @DockerContainer(image = "yandex/clickhouse-client", net = "host", waitStop = true, arguments = {
             "--multiquery",
-            "--query=CREATE TABLE IF NOT EXISTS default.sendThreeColumnsMultipleTimes_withCompression(date Date DEFAULT toDate(datetime), id UInt64, datetime UInt32, value UInt64) ENGINE = MergeTree(date, (datetime), 8192)"})
-    void sendThreeColumnsMultipleTimes_withCompression() {
+            "--query=CREATE TABLE IF NOT EXISTS default.sendTwoColumnsMultipleTimes_withCompression(date Date DEFAULT toDate(datetime), id UInt64, datetime DateTime DEFAULT now(), value UInt64, dt UInt32) ENGINE = MergeTree(date, (datetime), 8192)"})
+    void sendTwoColumnsMultipleTimes_withCompression() {
         client = client.compression(CompressionMethod.LZ4);
 
-        Object[] data = new Object[]{1L, 1, 1L};
+        Object[] data = new Object[]{1L, 1L, 1};
 
-        Flow.Publisher<Void> result = client.sendData("INSERT INTO default.sendThreeColumnsMultipleTimes_withCompression(id, datetime, value)",
+        Flow.Publisher<Void> result = client.sendData("INSERT INTO default.sendTwoColumnsMultipleTimes_withCompression(id, value, dt)",
                 publisherToFlowPublisher(
                         generate((Consumer<SynchronousSink<Object[]>>) sink -> sink.next(data))
                                 .take(NUMBERS_COUNT)));

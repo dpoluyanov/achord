@@ -32,7 +32,7 @@ import static com.github.mangelion.achord.ClickHousePacketDecoder.CH_SERVER_COMP
 import static com.github.mangelion.achord.QueryContext.QUERY_CONTEXT_ATTR;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14/02/2018
  */
 final class EmptyResponsePublisher<T> implements Flow.Publisher<Void> {

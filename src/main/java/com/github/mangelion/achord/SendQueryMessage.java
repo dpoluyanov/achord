@@ -25,7 +25,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 18/02/2018
  */
 final class SendQueryMessage extends ClientMessage {

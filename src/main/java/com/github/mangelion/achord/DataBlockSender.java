@@ -30,7 +30,7 @@ import static com.github.mangelion.achord.QueryContext.QUERY_CONTEXT_ATTR;
 
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 01/03/2018
  */
 final class DataBlockSender extends ChannelInboundHandlerAdapter implements Flow.Subscriber<DataBlock> {

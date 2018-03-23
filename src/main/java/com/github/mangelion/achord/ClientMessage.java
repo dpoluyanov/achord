@@ -21,7 +21,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufUtil;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14/02/2018
  */
 abstract class ClientMessage {

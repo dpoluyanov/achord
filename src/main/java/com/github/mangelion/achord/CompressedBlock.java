@@ -21,7 +21,7 @@ import io.netty.util.AbstractReferenceCounted;
 import io.netty.util.ReferenceCounted;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 19/02/2018
  */
 final class CompressedBlock extends AbstractReferenceCounted {

@@ -19,7 +19,7 @@ package com.github.mangelion.achord;
 import io.netty.util.AttributeKey;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 11/02/2018
  */
 interface QueryContext {

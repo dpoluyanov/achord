@@ -21,7 +21,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 18/02/2018
  */
 @ChannelHandler.Sharable

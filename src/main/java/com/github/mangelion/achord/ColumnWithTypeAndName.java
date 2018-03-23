@@ -19,7 +19,7 @@ package com.github.mangelion.achord;
 import io.netty.buffer.ByteBuf;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 24.12.2017
  */
 final class ColumnWithTypeAndName {

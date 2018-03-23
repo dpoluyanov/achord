@@ -1,11 +1,7 @@
 [![Build Status](https://travis-ci.org/Mangelion/achord.svg?branch=master)](https://travis-ci.org/Mangelion/achord)
 
-On Java 10 performance can be even better with `--add-opens java/base/jdk.internal.misc=ALL-UNNAMED`
-(because Netty allocates uninitialized arrays not filled with zeros).
-
 Java 10 is a minimal compatible version because reactive bridge based on [JEP 266](http://openjdk.java.net/jeps/266)
-
-Java 9 reached EOL, so we switched to actual 10 version starting from 2.0 driver version.
+and Java 9 reached EOL, so we switched to actual 10 version starting from 2.0 driver version.
 
 # Setup
 ## Maven
@@ -57,3 +53,10 @@ If you wish to use compression, enable it on bootstrap phase with `.compression(
 We hardly work on zstd, lz4hc and different combination of this methods in our driver.
 
 You can find more examples in `ClickHouseClientTest`.
+
+# OS Based Network stack.
+
+As Netty provides KQueue/Epool based mechanism like drop-in-replacement of Java.NIO interface, `Achord` tries to use it whenever it possible.
+First of all, it looks into Epool/Kqueue classes that might be presented in classpath. (Please, consult with [Netty documentation](https://netty.io/wiki/native-transports.html#wiki-h3-2) if you wish to add it manually.)
+
+When there are no epool/kqueue libraries in classpath `Achord` recedes onto Java.NIO if  `strictNativeNetwork` option not used, or set to `false`.

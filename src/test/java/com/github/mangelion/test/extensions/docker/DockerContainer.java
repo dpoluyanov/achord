@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 16.01.2018
  */
 @Target({ElementType.METHOD, ElementType.TYPE})

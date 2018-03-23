@@ -24,7 +24,7 @@ import io.netty.util.ReferenceCountUtil;
 import static com.github.mangelion.achord.ClickHouseClient.COMPATIBLE_CLIENT_REVISION;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14/02/2018
  */
 final class HelloMessage extends ClientMessage {

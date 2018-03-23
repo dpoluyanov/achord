@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 19/02/2018
  * In counterpart to this we need a Storage-Based processor, that can be more effective
  */

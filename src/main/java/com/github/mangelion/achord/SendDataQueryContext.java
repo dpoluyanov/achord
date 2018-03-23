@@ -26,7 +26,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14/02/2018
  */
 final class SendDataQueryContext<T> implements QueryContext {

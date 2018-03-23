@@ -25,7 +25,7 @@ import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 19/02/2018
  */
 @ChannelHandler.Sharable

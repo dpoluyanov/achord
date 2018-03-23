@@ -17,7 +17,7 @@
 package com.github.mangelion.achord;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 25.12.2017
  */
 final class ServerRevisions {

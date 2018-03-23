@@ -29,7 +29,7 @@ import static com.github.mangelion.achord.ClickHousePacketDecoder.ServerProtocol
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 13/02/2018
  */
 final class ClickHousePacketDecoder extends ReplayingDecoder<Void> {

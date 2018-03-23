@@ -26,7 +26,7 @@ import static com.github.mangelion.achord.ClickHousePacketDecoder.CH_SERVER_COMP
 import static com.github.mangelion.achord.ClickHousePacketDecoder.CH_SERVER_COMPRESSION_METHOD_ATTRIBUTE;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 21/02/2018
  */
 @ChannelHandler.Sharable

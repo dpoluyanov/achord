@@ -23,7 +23,7 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.ReferenceCountUtil;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 15/02/2018
  */
 @ChannelHandler.Sharable

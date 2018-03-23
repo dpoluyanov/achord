@@ -25,7 +25,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 06.03.2018
  */
 public final class SetJdkLoggerToFine implements BeforeAllCallback {

@@ -27,6 +27,8 @@ final class CityHash_v1_0_2 {
     private static final long k2 = 0x9ae16a3b2f90404fL;
     private static final long k3 = 0xc949d7c7509e6557L;
 
+    private CityHash_v1_0_2() { /* restricted */ }
+
     private static long Fetch64(ByteBuf p, int index) {
         return p.getLongLE(index);
     }

@@ -30,10 +30,11 @@ import java.util.concurrent.Flow;
 
 import static com.github.mangelion.achord.ClickHousePacketEncoder.CLICK_HOUSE_PACKET_ENCODER;
 import static com.github.mangelion.achord.Settings.NETWORK_COMPRESSION_METHOD;
+import static com.github.mangelion.achord.internal.NetworkBootstrap.tryNative;
 import static io.netty.channel.ChannelOption.TCP_NODELAY;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 10/02/2018
  */
 public final class ClickHouseClient implements AutoCloseable {
@@ -51,15 +52,13 @@ public final class ClickHouseClient implements AutoCloseable {
     private Settings settings = new Settings();
     private Limits limits = new Limits();
     private CompressionMethod compressionMethod;
+    private boolean strictNative = false;
 
     public ClickHouseClient() {
         // todo make № of threads customizable, like whole group
         workersGroup = new DefaultEventLoopGroup(2);
         compressionGroup = new DefaultEventLoopGroup(2);
         b = new Bootstrap()
-                // todo create I/O group and channel selection (may be through property but prefer native)
-                .group(new NioEventLoopGroup())
-                .channel(NioSocketChannel.class)
                 // defaults, can be overridden
                 .remoteAddress("localhost", 9000)
                 // todo make configurable, because on macosx there are no clashes with Nagle's Algorithm
@@ -112,6 +111,11 @@ public final class ClickHouseClient implements AutoCloseable {
         return this;
     }
 
+    public ClickHouseClient strictNativeNetwork(boolean strictNative) {
+        this.strictNative = strictNative;
+        return this;
+    }
+
     public <T> Flow.Publisher<Void> sendData(String query, Flow.Publisher<T[]> source) {
         return this.sendData("", query, source);
     }
@@ -129,7 +133,23 @@ public final class ClickHouseClient implements AutoCloseable {
     public <T> Flow.Publisher<Void> sendData(String queryId, String query, Flow.Publisher<T[]> source) {
         query += " FORMAT Native";
         AuthData authData = new AuthData(database, username, password);
-        return new EmptyResponsePublisher<>(b.clone(), workersGroup, compressionGroup, authData, queryId, query, settings, limits, source);
+        return new EmptyResponsePublisher<>(
+                prepareBootstrap(b, strictNative), workersGroup, compressionGroup, authData, queryId, query, settings, limits, source);
+    }
+
+    private static Bootstrap prepareBootstrap(Bootstrap b, boolean strictNative) {
+        Bootstrap clone = b.clone();
+
+        if (tryNative(clone)) {
+            return clone;
+        } else if (strictNative) {
+            throw new IllegalStateException("Strict native network mode is enabled, " +
+                    "but attempt to enable native mode was failed");
+        } else {
+            // fallback to Java.NIO
+            return clone.group(new NioEventLoopGroup())
+                    .channel(NioSocketChannel.class);
+        }
     }
 
     @Override

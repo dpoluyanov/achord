@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 16.01.2018
  */
 final class DockerParameterResolver implements ParameterResolver {

@@ -32,7 +32,7 @@ import java.util.Arrays;
 import static java.util.stream.Collectors.toList;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 16.01.2018
  */
 public final class DockerExtension implements BeforeAllCallback, BeforeTestExecutionCallback, AfterTestExecutionCallback, AfterAllCallback {

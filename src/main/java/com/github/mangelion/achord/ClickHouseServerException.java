@@ -19,7 +19,7 @@ package com.github.mangelion.achord;
 import io.netty.handler.codec.DecoderException;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 24.12.2017
  */
 final class ClickHouseServerException extends DecoderException {

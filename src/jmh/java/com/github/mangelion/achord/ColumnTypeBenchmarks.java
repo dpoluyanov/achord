@@ -39,7 +39,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static org.openjdk.jmh.annotations.Mode.Throughput;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 13.03.2018
  * <p>
  * Ensures that there is problem with vtables if many types inherited from one

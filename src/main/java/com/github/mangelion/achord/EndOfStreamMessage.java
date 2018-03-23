@@ -17,7 +17,7 @@
 package com.github.mangelion.achord;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 26.12.2017
  */
 final class EndOfStreamMessage implements ServerMessage {

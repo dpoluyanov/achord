@@ -24,7 +24,7 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 28.12.2017
  * todo make compression engines dynamically loadable, and exclude them from classpath
  */

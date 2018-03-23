@@ -26,7 +26,7 @@ import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14.03.2018
  */
 final class ColumnType {
@@ -39,6 +39,8 @@ final class ColumnType {
     private static final byte STRING = 6;
     private static final byte DATE = 7;
     private static final byte DATETIME = 8;
+
+    static final byte MAX_TYPE_BYTE = DATETIME;
 
     static byte valueOf(String typeName) {
         switch (typeName) {

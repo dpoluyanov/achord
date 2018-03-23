@@ -26,7 +26,7 @@ import static com.github.mangelion.achord.ClientMessage.writeStringBinary;
 import static com.github.mangelion.achord.ClientMessage.writeVarUInt;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 25.12.2017
  */
 final class Settings {

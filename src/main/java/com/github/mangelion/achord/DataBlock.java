@@ -21,7 +21,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 18/02/2018
  */
 final class DataBlock extends AbstractReferenceCounted {

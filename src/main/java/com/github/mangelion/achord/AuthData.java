@@ -17,7 +17,7 @@
 package com.github.mangelion.achord;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 14/02/2018
  */
 final class AuthData {

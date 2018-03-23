@@ -25,7 +25,7 @@ import static com.github.mangelion.achord.ClientMessage.writeStringBinary;
 import static com.github.mangelion.achord.ClientMessage.writeVarUInt;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 19/02/2018
  */
 @ChannelHandler.Sharable
@@ -53,6 +53,16 @@ final class DataBlockEncoder extends MessageToByteEncoder<DataBlock> {
 
         writeVarUInt(out, columns.length);
         writeVarUInt(out, block.rows);
+
+        // for avoid reallocations it is faster to precalculate estimated size
+        int estimatedRest = 0;
+        for (int i = 0; i < columns.length; i++) {
+            estimatedRest += 4 + columns[i].name.length();
+            estimatedRest += 4 + ColumnType.valueOf(columns[i].type).length();
+            estimatedRest += columns[i].data.readableBytes();
+        }
+
+        out = out.ensureWritable(estimatedRest);
 
         for (int i = 0; i < columns.length; i++) {
             ColumnWithTypeAndName c = columns[i];

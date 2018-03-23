@@ -30,7 +30,7 @@ import java.sql.SQLException;
 import static com.github.mangelion.achord.ClickHouseClientTest.NUMBERS_COUNT;
 
 /**
- * @author Camelion
+ * @author Dmitriy Poluyanov
  * @since 23.03.2018
  */
 @Tag("jdbc-comparison")
