@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Mangelion/achord.svg?branch=master)](https://travis-ci.org/Mangelion/achord)
+
 On Java 10 performance can be even better with `--add-opens java/base/jdk.internal.misc=ALL-UNNAMED`
 (because Netty allocates uninitialized arrays not filled with zeros).
 

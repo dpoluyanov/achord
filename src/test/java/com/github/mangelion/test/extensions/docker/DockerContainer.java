@@ -47,4 +47,6 @@ public @interface DockerContainer {
     String[] arguments() default {};
 
     String net() default "bridge";
+
+    boolean waitStop() default false;
 }

@@ -23,6 +23,7 @@ import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.command.PullImageResultCallback;
+import com.github.dockerjava.core.command.WaitContainerResultCallback;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
 
@@ -59,6 +60,16 @@ public final class DockerExtension implements BeforeAllCallback, BeforeTestExecu
         context.publishReportEntry("docker-container-id", containerId);
 
         getDockerClient(context).startContainerCmd(containerId).exec();
+
+        if (description.waitStop()) {
+            WaitContainerResultCallback resultCallback = new WaitContainerResultCallback();
+            getDockerClient(context).waitContainerCmd(containerId).exec(resultCallback);
+            try {
+                resultCallback.awaitCompletion();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
 
         return containerId;
     }
