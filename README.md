@@ -1,7 +1,9 @@
-On Java 9 performance can be even better with `--add-opens java/base/jdk.internal.misc=ALL-UNNAMED`
+On Java 10 performance can be even better with `--add-opens java/base/jdk.internal.misc=ALL-UNNAMED`
 (because Netty allocates uninitialized arrays not filled with zeros).
 
-Java 9 is a minimal compatible version because reactive bridge based on [JEP 266](http://openjdk.java.net/jeps/266)
+Java 10 is a minimal compatible version because reactive bridge based on [JEP 266](http://openjdk.java.net/jeps/266)
+
+Java 9 reached EOL, so we switched to actual 10 version starting from 2.0 driver version.
 
 # Setup
 ## Maven
@@ -11,7 +13,7 @@ Add dependency into your `pom.xml`
 <dependency>
   <groupId>com.github.mangelion</groupId>
   <artifactId>achord</artifactId>
-  <version>0.1.1</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
@@ -19,7 +21,7 @@ Add dependency into your `pom.xml`
 
 Add following dependency into your `build.gradle` script
 ```groovy
-compile "com.github.mangelion:achord:0.1.1"
+compile "com.github.mangelion:achord:0.2.0"
 ```
 
 # Usage

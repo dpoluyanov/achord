@@ -1,5 +1,6 @@
 buildscript {
     ext {
+        moduleName = "achord"
         nettyVersion = "4.1.22.Final"
     }
     repositories {
@@ -20,7 +21,7 @@ repositories {
 }
 
 group 'com.github.mangelion'
-sourceCompatibility = 1.9
+sourceCompatibility = 1.10
 
 sourceSets {
     jmh
@@ -49,7 +50,7 @@ dependencies {
     testCompile group: 'com.github.docker-java', name: 'docker-java', version: '3.0.14'
     testRuntimeOnly group: 'javax.activation', name: 'activation', version: '1.1.1'
 
-    testCompile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.38'
+    testCompile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.39'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
@@ -62,6 +63,15 @@ test {
     }
 }
 
+compileJava {
+    inputs.property("moduleName", moduleName)
+    doFirst {
+        options.compilerArgs = [
+                '--module-path', classpath.asPath,
+        ]
+        classpath = files()
+    }
+}
 
 task jmh(type: JavaExec) {
     classpath = sourceSets.jmh.runtimeClasspath
