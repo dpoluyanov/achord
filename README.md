@@ -33,9 +33,9 @@ Client comes with bunch of configurable options. So start with `ClickHouseClient
 For instance we have ClickHouse cluster defined on `awesome-ch-cluster-ea1.amazon.com` at port `8999` and want to connect as user  `customer` to database `examples` with our client like below:
 ```java
 var client = ClickHouseClient.bootstrap()
-                                              .remote("awesome-ch-cluster-ea1.amazon.com", 8999)
-                                              .username("customer")
-                                              .database("examples");
+                                .remote("awesome-ch-cluster-ea1.amazon.com", 8999)
+                                .username("customer")
+                                .database("examples");
 ```
 
 This is cheap client creation that doesn't block your cpu for a long time.
