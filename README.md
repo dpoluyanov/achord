@@ -32,7 +32,7 @@ We suppose that only one `ClickHouseClient` per server will be used. It means th
 Client comes with bunch of configurable options. So start with `ClickHouseClient.bootstrap()` and change those defaults that you need.
 For instance we have ClickHouse cluster defined on `awesome-ch-cluster-ea1.amazon.com` at port `8999` and want to connect as user  `customer` to database `examples` with our client like below:
 ```java
-ClickHouseClient client = ClickHouseClient.bootstrap()
+var client = ClickHouseClient.bootstrap()
                                               .remote("awesome-ch-cluster-ea1.amazon.com", 8999)
                                               .username("customer")
                                               .database("examples");
