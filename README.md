@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/Mangelion/achord.svg?branch=master)](https://travis-ci.org/Mangelion/achord)
 
 Java 10 is a minimal compatible version because reactive bridge based on [JEP 266](http://openjdk.java.net/jeps/266)
-and Java 9 reached EOL, so we switched to actual 10 version starting from 2.0 driver version.
+and Java 9 reached EOL, so we switched to actual 10 version starting from 0.2.0 driver version.
 
 # Setup
 ## Maven
